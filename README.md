@@ -7,7 +7,7 @@
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-3776AB?style=flat&logo=python&logoColor=white)](https://github.com/changshenhan/jq-agent)
 [![License: MIT](https://img.shields.io/badge/license-MIT-5c6bc0?style=flat)](LICENSE)
 
-[中文文档](README.zh-CN.md) · [Architecture](#architecture) · [CLI](#cli--language) · [Tutorial](#integrated-tutorial-bilingual)
+[中文文档](README.zh-CN.md) · [Architecture](#architecture) · [CLI](#cli--language) · [Design notes (Kilocode)](#design-notes-kilocode-ide-style-agents-and-jq-agent) · [Tutorial](#integrated-tutorial-bilingual)
 
 </div>
 
@@ -179,6 +179,50 @@ Priority: **`--lang` > `JQ_LANG` > saved config > `zh`**.
 ## Roadmap · next step
 
 Pluggable **local / self-hosted embedding** backends (explicit opt-in) for deployments that cannot use cloud Embeddings—without binding a single vendor. Chat and embeddings today are **HTTP APIs** only.
+
+---
+
+## Design notes: Kilocode, IDE-style agents, and jq-agent
+
+This section answers the “**study Kilocode / IDE-style code agents and compare trade-offs**” style of task: what we looked at, what we adopted in spirit, and how jq-agent differs—without turning this repo into a fork of another product.
+
+### Compliance & sources
+
+- **jq-agent does not embed or redistribute proprietary or leaked third-party code.** Design choices are informed by **public documentation**, **open-source projects** (e.g. [Kilocode](https://github.com/Kilo-Org/kilocode) — open-source agentic coding platform), and common **agentic orchestration** patterns.
+- Any comparison to closed-source or unreleased tools should be understood as **high-level architecture**, not line-by-line equivalence.
+
+### What “Kilocode-style” and IDE agents generally optimize for
+
+| Theme | Typical focus |
+|-------|----------------|
+| **Surface** | Deep editor integration (VS Code, diff, terminal, multi-file refactors). |
+| **Scope** | General software engineering: large repos, many languages, Git workflows. |
+| **Strengths** | End-to-end coding UX, mature tool surfaces, community scale. |
+| **Trade-offs** | Heavier host assumptions; domain-specific runtimes (e.g. a quant backtest sandbox) are usually **not** first-class. |
+
+### What jq-agent optimizes for instead
+
+| Theme | jq-agent focus |
+|-------|----------------|
+| **Domain** | **JoinQuant / `jqdatasdk`**: doc-grounded tools, strategy files, **subprocess backtests**, metrics parsing. |
+| **Runtime** | **Thin CLI + library**; optional **FastAPI + SSE**; workspace under **`.jq-agent/`** with explicit **path policy**. |
+| **Knowledge** | **Keyword + optional GitHub slices + Embeddings API**—no bundled local embedding model required. |
+| **Trade-offs** | Not a full IDE; not aiming to replace Kilocode’s editor UX—**complementary** (e.g. use MCP to connect hosts if needed). |
+
+### Concepts borrowed in spirit (not copies)
+
+- **Tool loop** (plan → execute → observe), **sandboxed writes**, **session persistence**, **history compaction**, **resilient tool JSON**—common patterns across modern agent stacks; we implement a **minimal** variant tailored to quant workflows.
+- **MCP stdio** aligns with “tools as capabilities” without locking jq-agent to a single editor.
+
+### One-line positioning (for reviews / demos)
+
+**jq-agent is a domain-specific orchestration layer for JoinQuant-style quant agents, informed by open agent frameworks (e.g. Kilocode) and IDE-style patterns, but scoped to sandboxed tools, doc retrieval, and backtest/metrics—not a Kilocode clone.**
+
+### 中文摘要
+
+- **合规**：不以任何泄露或闭源代码为实现依据；仅参考公开文档与开源项目（如 Kilocode）及通用 Agent 编排思想。  
+- **对比**：Kilocode 等侧重 **通用编程 + 编辑器一体化**；jq-agent 侧重 **聚宽 / jqdatasdk 工具链、沙箱、子进程回测与指标**。二者 **场景不同**，jq-agent **不是复刻**，而是 **垂直领域的轻量编排层**。  
+- **结论**：若任务要求「学习并对照 Kilocode / Code Agent」，本仓库用 **实现 + 本节文字** 说明取舍；若需要更细的逐条对照，可在内部文档中扩展为独立对比表。
 
 ---
 
