@@ -1,0 +1,15 @@
+.DS_Store
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+dist/
+*.egg-info/
+# 密钥与本地环境文件（保留 .env.example 作为模板）
+.env*
+!.env.example
+# 本地沙箱、索引与缓存（运行后生成；勿提交）
+.jq-agent/
+# 发布仓库不包含 tests/（本地开发与 CI 可自行保留）
+tests/

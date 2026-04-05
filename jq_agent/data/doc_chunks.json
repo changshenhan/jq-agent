@@ -1,0 +1,26 @@
+[
+  {
+    "id": "jq-get_price-1",
+    "source": "jqdatasdk_get_price.md",
+    "version": "sample-0.1",
+    "text": "get_price(security, start_date=None, end_date=None, frequency='daily', fields=None, skip_paused=False, fq='pre', count=None) 获取行情数据。security 为股票代码字符串或列表；frequency 支持 'daily'/'minute' 等；fq 为复权：'pre' 前复权，'none' 不复权。"
+  },
+  {
+    "id": "jq-get_index_stocks-1",
+    "source": "jqdatasdk_index.md",
+    "version": "sample-0.1",
+    "text": "get_index_stocks(index_symbol, date=None) 获取指数成份股。index_symbol 例如 '000300.XSHG' 表示沪深300。"
+  },
+  {
+    "id": "jq-run_daily-1",
+    "source": "joinquant_strategy_api.md",
+    "version": "sample-0.1",
+    "text": "聚宽回测中在 strategy 里定义 initialize(context)、handle_data(context, data) 或使用 run_daily 等调度函数；context 提供 portfolio、current_dt 等。实际运行需在聚宽研究/回测环境或本地已配置 jqdatasdk 的 Python 中执行。"
+  },
+  {
+    "id": "jq-auth-1",
+    "source": "jqdatasdk_auth.md",
+    "version": "sample-0.1",
+    "text": "使用 jqdatasdk 前需 authenticate(username, password) 或使用聚宽提供的认证方式；本 CLI 沙箱内若未配置账号，应生成可离线演示的 mock 回测脚本而非虚构 API。"
+  }
+]
