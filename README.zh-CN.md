@@ -67,6 +67,7 @@
 
 ## 安全与凭据
 
+- **AI Agent / MCP 宿主：** 协作约定与工具清单见 **[AGENTS.md](AGENTS.md)**（勿在仓库中写入真实密钥）。
 - **切勿**将 API 密钥、聚宽网站密码或手机号提交到 Git。请使用本地 **`.env`**（已 gitignore）或终端 `export`；可复制 **`.env.example`** 后自行填写。
 - **本工具不收集**聚宽网页登录信息。请配置 **`JQ_LLM_API_KEY`**（或旧名 `JQ_OPENAI_API_KEY`），用于 **OpenAI 兼容的 Chat 与 Embeddings** 接口。若策略在实盘中调用 `jqdatasdk`，请按聚宽要求在 **策略代码或运行环境** 中自行配置鉴权，与本 CLI 无关。
 

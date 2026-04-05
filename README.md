@@ -109,6 +109,7 @@ Not in this repo: **LSP client** wiring (Pyright/Pylance-style diagnostics into 
 
 ## Security & credentials
 
+- **AI agents & MCP hosts:** see **[AGENTS.md](AGENTS.md)** for collaboration rules, tool summary, and env var names (no secrets in-repo).
 - **Never commit** API keys, passwords, or phone numbers. Use **`.env`** (listed in **`.gitignore`**) or shell exports; start from **`.env.example`** only as a template.
 - Configure **`JQ_LLM_API_KEY`** (or legacy **`JQ_OPENAI_API_KEY`**) for OpenAI-compatible Chat + Embeddings. JoinQuant / **`jqdatasdk`** credentials belong in **your** environment when you run strategies—**not** in the repository.
 
