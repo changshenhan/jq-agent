@@ -7,7 +7,7 @@
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-3776AB?style=flat&logo=python&logoColor=white)](https://github.com/changshenhan/jq-agent)
 [![License: MIT](https://img.shields.io/badge/license-MIT-5c6bc0?style=flat)](LICENSE)
 
-[中文文档](README.zh-CN.md) · [Architecture](#architecture) · [Comparison](#comparison-claw-code-kilo-code--jq-agent) · [CLI](#cli--language) · [Tutorial](#integrated-tutorial-bilingual)
+[中文文档](README.zh-CN.md) · [Architecture](#architecture) · [Comparison](#comparison-claw-code-kilo-code-and-jq-agent) · [CLI](#cli--language) · [Tutorial](#integrated-tutorial-bilingual)
 
 </div>
 
@@ -62,7 +62,7 @@
 
 ---
 
-## Comparison: claw-code, Kilo Code & jq-agent
+## Comparison: claw-code, Kilo Code, and jq-agent
 
 This section answers the “study **claw-code** vs **Kilo Code**, compare pros/cons” style assignment: it is based on **public repositories and docs** only (no reliance on proprietary leaks as a source of truth). In this workspace, **claw-code** refers to the open **claw-code** rewrite project (e.g. [instructkr/claw-code](https://github.com/instructkr/claw-code)–style harness: Python + Rust ports, MCP, compaction). **Kilo Code** refers to the open **[kilo-org/kilocode](https://github.com/kilo-org/kilocode)** stack and [kilo.ai docs](https://kilo.ai/docs/).
 
