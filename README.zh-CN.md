@@ -151,6 +151,7 @@ jq-agent index build --full   # 额外索引 alpha101 / alpha191 / technical_ana
 | `JQ_EMBEDDING_MODEL` | Embeddings 模型 id（默认 `text-embedding-3-small`） |
 | `JQ_MODEL` | 如 `gpt-4o-mini`、`deepseek-chat` |
 | `JQ_MAX_ITERATIONS` | Agent 最大循环次数（默认 `16`） |
+| `JQ_AGENT_TASK_MODE` | `auto`（关键词识别后注入 jqdatasdk 快路径）/ `jq_sdk`（始终快路径）/ `general`（不注入）；CLI `--task-mode`；Web 可选覆盖 |
 | `JQ_LANG` | 界面语言：`zh` 或 `en` |
 | `JQ_BACKTEST_TIMEOUT_SEC` | `execute_backtest` 子进程超时秒数（默认 `120`） |
 | `JQ_LLM_STREAM` | `true` / `false` — 是否 SSE 流式调用 chat completions |

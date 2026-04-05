@@ -1,1 +1,122 @@
 @import "tailwindcss";
+
+/* 参考桌面 Goshu：月夜、胡粉、障子纸面板、金褐描边、呼吸曲线 — 轻量纯 CSS，无 WebGL */
+@theme {
+  --font-display: "Noto Serif SC", "Noto Serif JP", Georgia, "Songti SC", serif;
+  --font-ui: "Plus Jakarta Sans", "Noto Sans SC", "PingFang SC", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", "SF Mono", ui-monospace, monospace;
+
+  --color-moon-950: #070708;
+  --color-moon-900: #0c0c0f;
+  --color-gofun: #e8e4dc;
+  --color-gofun-muted: #9a958a;
+  --color-ink: #2a2824;
+  --color-koke: #5a6348;
+  --color-gold: #b4a088;
+  --color-gold-dim: rgba(180, 160, 136, 0.45);
+}
+
+@layer base {
+  :root {
+    --ease-breath: cubic-bezier(0.22, 1, 0.36, 1);
+    --shoji-border: rgba(255, 250, 230, 0.08);
+    --shoji-inset: rgba(255, 250, 230, 0.04);
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    font-family: var(--font-ui);
+    background-color: var(--color-moon-950);
+    color: var(--color-gofun);
+  }
+
+  ::selection {
+    background: rgba(90, 99, 72, 0.35);
+    color: var(--color-gofun);
+  }
+}
+
+/* 月夜深空 + 极淡暖光晕 */
+.bg-moon-stage {
+  background-color: var(--color-moon-950);
+  background-image:
+    radial-gradient(ellipse 120% 80% at 50% -20%, rgba(90, 99, 72, 0.12), transparent 50%),
+    radial-gradient(ellipse 80% 50% at 100% 50%, rgba(180, 160, 136, 0.06), transparent 45%),
+    radial-gradient(ellipse 60% 40% at 0% 80%, rgba(60, 55, 48, 0.15), transparent 40%);
+}
+
+/* 枯山水砂纹：与 Goshu bg-raked-sand 同思路，极低对比 */
+.bg-raked {
+  background-image: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 1px,
+    rgba(255, 250, 230, 0.018) 1px,
+    rgba(255, 250, 230, 0.018) 2px
+  );
+  background-size: 100% 4px;
+}
+
+/* 障子纸面板：玻璃 + 内阴影，对齐 Goshu .container-shoji */
+.panel-shoji {
+  background: rgba(10, 10, 12, 0.78);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--shoji-border);
+  box-shadow:
+    0 0 40px rgba(0, 0, 0, 0.45),
+    inset 0 0 0 1px var(--shoji-inset);
+  transition:
+    border-color 0.8s var(--ease-breath),
+    box-shadow 0.8s var(--ease-breath);
+}
+
+.panel-shoji:hover {
+  border-color: rgba(255, 250, 230, 0.12);
+}
+
+/* 主按钮：墨色底 + 金边，避免默认「系统蓝」 */
+.btn-primary {
+  font-family: var(--font-ui);
+  transition:
+    transform 0.5s var(--ease-breath),
+    background-color 0.5s var(--ease-breath),
+    border-color 0.5s var(--ease-breath),
+    box-shadow 0.5s var(--ease-breath);
+}
+
+.btn-primary:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(90, 99, 72, 0.85);
+}
+
+.btn-ghost {
+  transition:
+    color 0.6s var(--ease-breath),
+    border-color 0.6s var(--ease-breath),
+    background-color 0.6s var(--ease-breath);
+}
+
+.btn-ghost:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(180, 160, 136, 0.35);
+}
+
+/* 日志区滚动条（WebKit） */
+.log-scroll::-webkit-scrollbar {
+  width: 8px;
+}
+.log-scroll::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+}
+.log-scroll::-webkit-scrollbar-thumb {
+  background: rgba(180, 160, 136, 0.25);
+  border-radius: 4px;
+}
+.log-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(180, 160, 136, 0.4);
+}

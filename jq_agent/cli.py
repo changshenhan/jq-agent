@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import os
+from typing import Literal, cast
 
 import typer
 from rich.console import Console
@@ -58,6 +59,11 @@ def run_cmd(
         "--stream",
         help="Use SSE streaming for LLM (lower time-to-first-token)",
     ),
+    task_mode: str | None = typer.Option(
+        None,
+        "--task-mode",
+        help="Override JQ_AGENT_TASK_MODE: auto | jq_sdk | general",
+    ),
 ) -> None:
     """Run agent loop / 运行 Agent 闭环"""
     ui_lang: UiLang = ctx.obj["lang"]
@@ -68,6 +74,13 @@ def run_cmd(
         settings.max_iterations = max_iter
     if stream:
         settings.llm_stream = True
+    if task_mode is not None:
+        tm = task_mode.strip().lower().replace("-", "_")
+        if tm not in ("auto", "jq_sdk", "general"):
+            raise typer.BadParameter("task-mode must be one of: auto, jq_sdk, general")
+        settings = settings.model_copy(
+            update={"agent_task_mode": cast(Literal["auto", "jq_sdk", "general"], tm)}
+        )
     console = Console()
     r = asyncio.run(
         run_agent_loop(
@@ -99,6 +112,10 @@ def doctor_cmd(ctx: typer.Context) -> None:
     c.print(f"{t('doctor_model', ui_lang)}: {s.model}")
     c.print(f"{t('doctor_base_url', ui_lang)}: {s.llm_base_url}")
     c.print(f"{t('doctor_max_iter', ui_lang)}: {s.max_iterations}")
+    c.print(
+        f"Agent task mode (JQ_AGENT_TASK_MODE): [cyan]{s.agent_task_mode}[/cyan]  "
+        f"(auto=keyword route · jq_sdk=fast path · general=off)"
+    )
     c.print(f"LLM stream (JQ_LLM_STREAM): [{'green' if s.llm_stream else 'dim'}]{s.llm_stream}[/]")
     c.print(f"Permission mode (JQ_PERMISSION_MODE): [cyan]{s.permission_mode}[/cyan]")
     c.print(f"Usage log (JQ_USAGE_LOG): {s.usage_log}")

@@ -13,8 +13,9 @@ import {
   type RefObject,
 } from "react";
 
+/* 与 index.css 中 IBM Plex Mono + 中文回退一致，供 Pretext canvas 测量 */
 const LOG_FONT =
-  '400 13.6px Inter, "Noto Sans SC", "PingFang SC", "Hiragino Sans GB", sans-serif';
+  '400 13.6px "IBM Plex Mono", "Noto Sans SC", "PingFang SC", monospace';
 const LINE_HEIGHT_PX = 22;
 const PAD_X = 16;
 
@@ -83,10 +84,12 @@ export function LogView({ text }: LogViewProps) {
     <div
       ref={scrollRef}
       onScroll={onScroll}
-      className="max-h-[min(60vh,28rem)] overflow-y-auto overflow-x-hidden rounded-lg border border-slate-700 bg-slate-900 contain-content [scrollbar-gutter:stable]"
+      className="panel-shoji log-scroll max-h-[min(58vh,26rem)] overflow-y-auto overflow-x-hidden rounded-sm [scrollbar-gutter:stable]"
     >
       {lines.length === 0 ? (
-        <div className="min-h-16 px-4 py-4 font-mono text-[0.85rem] text-slate-500" />
+        <div className="font-[family-name:var(--font-ui)] min-h-20 px-4 py-6 text-sm italic text-[var(--color-gofun-muted)]/80">
+          运行任务后，流式日志将显示于此…
+        </div>
       ) : (
         <div
           className="relative w-full"
@@ -98,7 +101,7 @@ export function LogView({ text }: LogViewProps) {
           {vItems.map((vi) => (
             <div
               key={vi.key}
-              className="absolute left-0 box-border whitespace-pre-wrap break-words px-4 font-mono text-[0.85rem] leading-[22px] text-slate-200"
+              className="absolute left-0 box-border whitespace-pre-wrap break-words px-4 font-[family-name:var(--font-mono)] text-[0.85rem] leading-[22px] text-[var(--color-gofun)]/92"
               style={{
                 top: 0,
                 width: "100%",

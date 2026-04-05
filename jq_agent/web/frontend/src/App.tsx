@@ -34,8 +34,12 @@ function parseSseBlocks(buffer: string): { rest: string; events: SseEvent[] } {
   return { rest, events };
 }
 
+type TaskMode = "auto" | "jq_sdk" | "general";
+
 export default function App() {
   const [prompt, setPrompt] = useState("");
+  /** server = 不传 task_mode，由服务端 JQ_AGENT_TASK_MODE / .env 决定 */
+  const [taskMode, setTaskMode] = useState<"server" | TaskMode>("server");
   const [status, setStatus] = useState("");
   const [running, setRunning] = useState(false);
   const [logText, setLogText] = useState("");
@@ -92,7 +96,11 @@ export default function App() {
       const res = await fetch("/api/run", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt: p, lang: "zh" }),
+        body: JSON.stringify({
+          prompt: p,
+          lang: "zh",
+          ...(taskMode !== "server" ? { task_mode: taskMode } : {}),
+        }),
         signal: ac.signal,
         cache: "no-store",
       });
@@ -144,7 +152,7 @@ export default function App() {
       setRunning(false);
       abortRef.current = null;
     }
-  }, [appendLog, flushNow, prompt]);
+  }, [appendLog, flushNow, prompt, taskMode]);
 
   const stop = useCallback(() => {
     abortRef.current?.abort();
@@ -163,63 +171,119 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-full bg-slate-950 text-slate-100 antialiased">
-      <div className="mx-auto max-w-3xl px-4 py-8">
-        <h1 className="text-xl font-semibold tracking-tight text-white">
-          jq-agent · Web
-        </h1>
-        <p className="mt-2 text-sm text-slate-400">
-          需要配置{" "}
-          <code className="rounded bg-slate-800 px-1 py-0.5 text-slate-200">
-            JQ_LLM_API_KEY
-          </code>
-          ；日志排版{" "}
-          <a
-            className="text-sky-400 hover:underline"
-            href="https://github.com/chenglou/pretext"
-            target="_blank"
-            rel="noreferrer"
-          >
-            @chenglou/pretext
-          </a>{" "}
-          + 虚拟列表，SSE 仍按帧合并写入。
-          <a className="ml-1 text-sky-400 hover:underline" href="/health">
-            /health
-          </a>
-        </p>
-
-        <form onSubmit={onSubmit} className="mt-4">
-          <textarea
-            value={prompt}
-            onChange={(e) => setPrompt(e.target.value)}
-            rows={8}
-            placeholder="输入任务，例如：查文档里 get_price 的用法…"
-            className="w-full resize-y rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-100 placeholder:text-slate-500 focus:border-sky-500 focus:outline-none focus:ring-1 focus:ring-sky-500"
-            disabled={running}
-          />
-          <div className="mt-3 flex flex-wrap items-center gap-3">
-            <button
-              type="submit"
-              disabled={running}
-              className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white shadow hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              运行
-            </button>
-            <button
-              type="button"
-              disabled={!running}
-              onClick={stop}
-              className="rounded-lg border border-slate-600 bg-slate-800 px-4 py-2 text-sm font-medium text-slate-200 hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-40"
-            >
-              停止
-            </button>
-            <span className="text-sm text-slate-400">{status}</span>
+    <div className="bg-moon-stage relative min-h-screen">
+      <div
+        className="pointer-events-none fixed inset-0 bg-raked opacity-[0.85]"
+        aria-hidden
+      />
+      <div className="relative z-10 mx-auto max-w-3xl px-4 py-10 md:px-6 md:py-14">
+        <header className="flex flex-col gap-3 border-b border-[rgba(255,250,230,0.08)] pb-8 md:flex-row md:items-end md:justify-between">
+          <div>
+            <p className="font-[family-name:var(--font-ui)] text-[0.65rem] font-medium uppercase tracking-[0.35em] text-[var(--color-gold)]">
+              JoinQuant · Agent
+            </p>
+            <h1 className="font-[family-name:var(--font-display)] mt-2 text-2xl font-semibold tracking-[0.02em] text-[var(--color-gofun)] md:text-3xl">
+              jq-agent
+            </h1>
+            <p className="font-[family-name:var(--font-ui)] mt-2 max-w-md text-sm leading-relaxed text-[var(--color-gofun-muted)]">
+              聚宽生态编排 · 流式日志与 Pretext 排版。请在运行目录配置{" "}
+              <code className="rounded border border-[var(--color-gold-dim)] bg-[rgba(0,0,0,0.25)] px-1.5 py-0.5 font-mono text-xs text-[var(--color-gofun)]">
+                JQ_LLM_API_KEY
+              </code>
+              。
+            </p>
           </div>
-        </form>
+          <div className="flex flex-wrap items-center gap-2">
+            <a
+              className="font-[family-name:var(--font-ui)] rounded-full border border-[var(--color-gold-dim)] px-3 py-1.5 text-xs text-[var(--color-gofun-muted)] transition-colors duration-500 hover:border-[var(--color-gold)] hover:text-[var(--color-gofun)]"
+              href="/health"
+            >
+              /health
+            </a>
+            <a
+              className="font-[family-name:var(--font-ui)] rounded-full border border-[var(--color-gold-dim)] px-3 py-1.5 text-xs text-[var(--color-gofun-muted)] transition-colors duration-500 hover:border-[var(--color-gold)] hover:text-[var(--color-gofun)]"
+              href="https://github.com/chenglou/pretext"
+              target="_blank"
+              rel="noreferrer"
+            >
+              Pretext
+            </a>
+          </div>
+        </header>
 
-        <div className="mt-4">
+        <section className="panel-shoji mt-10 rounded-sm p-6 md:p-8">
+          <h2 className="font-[family-name:var(--font-display)] text-lg font-medium text-[var(--color-gofun)]">
+            任务
+          </h2>
+          <p className="font-[family-name:var(--font-ui)] mt-1 text-xs text-[var(--color-gofun-muted)]">
+            自然语言描述目标；运行后 SSE 流式输出，可随时停止。
+          </p>
+          <div className="font-[family-name:var(--font-ui)] mt-4 flex flex-wrap items-center gap-2 text-xs text-[var(--color-gofun-muted)]">
+            <label htmlFor="task-mode" className="shrink-0">
+              任务模式
+            </label>
+            <select
+              id="task-mode"
+              value={taskMode}
+              onChange={(e) =>
+                setTaskMode(e.target.value as "server" | TaskMode)
+              }
+              disabled={running}
+              className="rounded-sm border border-[rgba(255,250,230,0.12)] bg-[rgba(0,0,0,0.35)] px-2 py-1.5 text-[var(--color-gofun)] focus:border-[rgba(90,99,72,0.85)] focus:outline-none"
+            >
+              <option value="server">跟随服务端（JQ_AGENT_TASK_MODE）</option>
+              <option value="auto">auto（关键词进 jqdatasdk 快路径）</option>
+              <option value="jq_sdk">jq_sdk（始终快路径）</option>
+              <option value="general">general（通用，不加强）</option>
+            </select>
+          </div>
+          <form onSubmit={onSubmit} className="mt-6">
+            <textarea
+              value={prompt}
+              onChange={(e) => setPrompt(e.target.value)}
+              rows={8}
+              placeholder="例如：查文档里 get_price 的用法，并给出一行示例…"
+              disabled={running}
+              className="font-[family-name:var(--font-ui)] w-full resize-y rounded-sm border border-[rgba(255,250,230,0.1)] bg-[rgba(0,0,0,0.35)] px-4 py-3 text-sm leading-relaxed text-[var(--color-gofun)] placeholder:text-[var(--color-gofun-muted)]/70 focus:border-[rgba(90,99,72,0.85)] focus:outline-none focus:ring-1 focus:ring-[rgba(90,99,72,0.5)]"
+            />
+            <div className="mt-5 flex flex-wrap items-center gap-3">
+              <button
+                type="submit"
+                disabled={running}
+                className="btn-primary rounded-sm border border-[var(--color-gold-dim)] bg-[rgba(26,24,22,0.9)] px-6 py-2.5 text-sm font-medium text-[var(--color-gofun)] hover:border-[var(--color-gold)] hover:bg-[rgba(35,32,28,0.95)] disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                运行
+              </button>
+              <button
+                type="button"
+                disabled={!running}
+                onClick={stop}
+                className="btn-ghost rounded-sm border border-[rgba(255,250,230,0.12)] bg-transparent px-5 py-2.5 text-sm font-medium text-[var(--color-gofun-muted)] hover:border-[var(--color-gold-dim)] hover:text-[var(--color-gofun)] disabled:cursor-not-allowed disabled:opacity-30"
+              >
+                停止
+              </button>
+              <span className="font-[family-name:var(--font-ui)] text-xs text-[var(--color-gofun-muted)] md:ml-2">
+                {status}
+              </span>
+            </div>
+          </form>
+        </section>
+
+        <section className="mt-8">
+          <div className="mb-3 flex items-baseline justify-between gap-4">
+            <h2 className="font-[family-name:var(--font-display)] text-lg font-medium text-[var(--color-gofun)]">
+              输出
+            </h2>
+            <span className="font-[family-name:var(--font-ui)] text-[0.65rem] uppercase tracking-[0.2em] text-[var(--color-gold)]/80">
+              SSE · Virtual
+            </span>
+          </div>
           <LogView text={logText} />
-        </div>
+        </section>
+
+        <footer className="font-[family-name:var(--font-ui)] mt-12 border-t border-[rgba(255,250,230,0.06)] pt-6 text-center text-[0.65rem] leading-relaxed text-[var(--color-gofun-muted)]">
+          jq-agent Web · 月夜底色、障子纸玻璃与金褐描边（与 Goshu / Yonderaura 系作品同向的克制东方气质）
+        </footer>
       </div>
     </div>
   );

@@ -48,6 +48,7 @@
 
 - **`JQ_LLM_API_KEY`**：大模型（兼容 `JQ_OPENAI_API_KEY`）。
 - **`JQ_LLM_BASE_URL` / `JQ_MODEL`**：底座与模型 id。
+- **`JQ_AGENT_TASK_MODE`**：`auto`（关键词路由 jqdatasdk/聚宽快路径）| `jq_sdk`（始终快路径）| `general`（不注入）。
 - **`JQ_LLM_STREAM`**：流式输出（降低首字延迟，推荐 `true`）。
 - **`JQ_LLM_HTTP2` / `JQ_LLM_HTTP_*`**：HTTP/2、连接池与分阶段超时（见 README **Performance**）。
 - **`JQ_PHONE` / `JQ_PASSWORD`**：聚宽 / `jqdatasdk`（仅用户本机环境）。

@@ -214,6 +214,7 @@ jq-agent index status
 | `JQ_EMBEDDING_MODEL` | Embeddings model id |
 | `JQ_MODEL` | Chat model id |
 | `JQ_MAX_ITERATIONS` | Loop cap (default `16`) |
+| `JQ_AGENT_TASK_MODE` | `auto` / `jq_sdk` / `general` — lightweight **jqdatasdk fast-path** (keyword route vs always-on vs off); CLI `--task-mode`; Web optional body |
 | `JQ_LANG` | CLI UI: `zh` or `en` |
 | `JQ_BACKTEST_TIMEOUT_SEC` | Subprocess timeout for **`execute_backtest`** |
 | `JQ_LLM_STREAM` | SSE streaming for chat |

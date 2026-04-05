@@ -33,12 +33,18 @@ class RunBody(BaseModel):
     prompt: str = Field(..., min_length=1, max_length=32000)
     max_iter: int | None = Field(None, ge=1, le=64)
     lang: Literal["zh", "en"] = "zh"
+    task_mode: Literal["auto", "jq_sdk", "general"] | None = None
 
 
 def _apply_run_overrides(settings: Settings, body: RunBody) -> Settings:
-    if body.max_iter is None:
+    updates: dict = {}
+    if body.max_iter is not None:
+        updates["max_iterations"] = body.max_iter
+    if body.task_mode is not None:
+        updates["agent_task_mode"] = body.task_mode
+    if not updates:
         return settings
-    return settings.model_copy(update={"max_iterations": body.max_iter})
+    return settings.model_copy(update=updates)
 
 
 def _static_ready() -> bool:

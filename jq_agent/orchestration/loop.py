@@ -14,6 +14,8 @@ from jq_agent.config import Settings
 from jq_agent.i18n import UiLang, t
 from jq_agent.llm.client import AsyncChatClient
 from jq_agent.llm.streaming import stream_complete_async
+from jq_agent.orchestration.task_route import effective_jq_sdk_fast_path
+from jq_agent.prompts.jq_sdk_fast_path import jq_sdk_fast_path_addon
 from jq_agent.prompts.router import model_system_addon
 from jq_agent.prompts.system import SYSTEM_PROMPT
 from jq_agent.retrieval.linkage import system_prompt_retrieval_addon
@@ -96,7 +98,7 @@ def _ide_system_addon(settings: Settings) -> str:
     )
 
 
-def _build_system_content(settings: Settings, ui_lang: UiLang) -> str:
+def _build_system_content(settings: Settings, ui_lang: UiLang, user_prompt: str) -> str:
     parts = [
         SYSTEM_PROMPT.strip(),
         model_system_addon(settings.model, settings.llm_base_url),
@@ -105,6 +107,8 @@ def _build_system_content(settings: Settings, ui_lang: UiLang) -> str:
     ide = _ide_system_addon(settings)
     if ide:
         parts.append(ide)
+    if effective_jq_sdk_fast_path(settings, user_prompt):
+        parts.append(jq_sdk_fast_path_addon(ui_lang))
     return "\n\n".join(parts)
 
 
@@ -192,7 +196,7 @@ async def run_agent_loop(
         ide_agent=settings.ide_agent_tools,
         github_tools=settings.github_tools_enabled,
     )
-    system_full = _build_system_content(settings, ui_lang)
+    system_full = _build_system_content(settings, ui_lang, user_prompt)
 
     if session_name and resume_session:
         loaded = load_session_messages(session_name)

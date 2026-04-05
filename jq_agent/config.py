@@ -72,6 +72,11 @@ class Settings(BaseSettings):
         description="压缩后保留尾部消息条数",
     )
 
+    agent_task_mode: Literal["auto", "jq_sdk", "general"] = Field(
+        default="auto",
+        description="任务路由：auto=关键词识别 jqdatasdk/聚宽后注入快路径；jq_sdk=始终快路径；general=不注入",
+    )
+
     ide_agent_tools: bool = Field(
         default=True,
         description="启用 IDE 级工具：列目录、glob、grep、search_replace、run_terminal_cmd（对标 Kilocode 工作区能力）",
