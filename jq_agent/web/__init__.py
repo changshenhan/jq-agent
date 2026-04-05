@@ -1,4 +1,4 @@
-"""可选 Web UI：FastAPI + SSE。使用 ``pip install 'jq-agent[web]'`` 安装依赖。"""
+"""可选 Web UI：FastAPI + Vite/React 静态资源 + SSE。使用 ``pip install 'jq-agent[web]'`` 安装依赖。"""
 
 from __future__ import annotations
 

@@ -119,6 +119,16 @@ class Settings(BaseSettings):
         description="启用 HTTP/2（需依赖 h2；多路复用，与 OpenAI/兼容网关主流实践一致）",
     )
 
+    # --- GitHub 公开 API（仅 api.github.com：搜索仓库/用户、查看公开资料）---
+    github_tools_enabled: bool = Field(
+        default=True,
+        description="启用 github_* 工具（REST API；匿名有速率限制，可选 token）",
+    )
+    github_token: str = Field(
+        default="",
+        description="可选 GitHub PAT/fine-grained token，提高 API 配额（也可用环境变量 GITHUB_TOKEN）",
+    )
+
 
 def load_settings() -> Settings:
     """读取配置；兼容旧环境变量 JQ_OPENAI_API_KEY / JQ_OPENAI_BASE_URL。"""
@@ -132,6 +142,15 @@ def load_settings() -> Settings:
         leg_u = os.environ.get("JQ_OPENAI_BASE_URL", "").strip()
         if leg_u:
             updates["llm_base_url"] = leg_u
+    if not s.github_token.strip():
+        gt = os.environ.get("GITHUB_TOKEN", "").strip()
+        if gt:
+            updates["github_token"] = gt
+
+    if "JQ_GITHUB_TOOLS" in os.environ:
+        raw = os.environ.get("JQ_GITHUB_TOOLS", "").strip().lower()
+        updates["github_tools_enabled"] = raw in ("1", "true", "yes", "on")
+
     if updates:
         return s.model_copy(update=updates)
     return s

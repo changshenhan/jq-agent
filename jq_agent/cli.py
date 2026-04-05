@@ -108,6 +108,13 @@ def doctor_cmd(ctx: typer.Context) -> None:
         f"LLM HTTP/2 (JQ_LLM_HTTP2 + h2): [{'green' if use_http2(s) else 'dim'}]{use_http2(s)}[/]"
     )
     c.print(f"{t('doctor_ui_lang', ui_lang)}: [yellow]{ui_lang}[/yellow]")
+    gh_on = "green" if s.github_tools_enabled else "dim"
+    c.print(f"{t('doctor_github_tools', ui_lang)}: [{gh_on}]{s.github_tools_enabled}[/]")
+    gt = bool(s.github_token.strip())
+    c.print(
+        f"{t('doctor_github_token', ui_lang)}: [{'green' if gt else 'yellow'}]"
+        f"{t('doctor_github_token_yes' if gt else 'doctor_github_token_no', ui_lang)}[/]"
+    )
     c.print()
     for line in doctor_retrieval_lines(ui_lang):
         c.print(line)

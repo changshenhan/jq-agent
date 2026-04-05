@@ -39,6 +39,8 @@
 | `analyze_backtest_metrics` | 解析指标 JSON / stdout |
 | `research_subtask` | 单轮无工具推理 |
 | `fork_subagent_session` | 需 CLI `--session` 时会话树分叉 |
+| `github_search_repositories` / `github_search_users` | GitHub 公开搜索（REST API） |
+| `github_get_user` / `github_get_repository` | 公开用户/仓库元数据（非网页爬取） |
 
 量化推荐闭环：**`query_jq_docs` → 写/改策略 → `lint_strategy_file` → `execute_backtest` → `analyze_backtest_metrics`**；净值图依赖策略写出 **`scratchpad/backtest_equity.csv`**。
 
@@ -50,13 +52,14 @@
 - **`JQ_LLM_HTTP2` / `JQ_LLM_HTTP_*`**：HTTP/2、连接池与分阶段超时（见 README **Performance**）。
 - **`JQ_PHONE` / `JQ_PASSWORD`**：聚宽 / `jqdatasdk`（仅用户本机环境）。
 - **`JQ_IDE_AGENT_TOOLS`**：是否注册 IDE 类工具（默认 `true`）。
+- **`JQ_GITHUB_TOOLS`** / **`JQ_GITHUB_TOKEN`**（或 **`GITHUB_TOKEN`**）：GitHub 公开 API 工具开关与可选 token（提配额）。
 - 完整列表见 **`.env.example`** 与 **[README.md](README.md)** 环境表。
 
 ## 可视化栈（改 UI/图表时请对齐）
 
 - **图表**：**Plotly.py 6.x**（交互 HTML，与 `jq_agent/tools/equity_html.py` 一致）；**不要**在无理由时引入第二套绘图库（如 matplotlib）。
 - **终端**：**Rich**（面板、表格、Spinner）。
-- **可选 Web**：**FastAPI** + **SSE** + **Tailwind CDN** + **Fetch Streams / requestAnimationFrame**（`jq_agent/web/server.py`），无打包；反向代理勿对 SSE 做 gzip 缓冲。
+- **可选 Web**：**Vite + React 19 + Tailwind 4**；日志列表用 **[@chenglou/pretext](https://github.com/chenglou/pretext)** 折行 + **TanStack Virtual**；流式文本 **ref + rAF**；**FastAPI** 静态资源 + **`/api/run` SSE**；勿对 SSE gzip 缓冲。
 
 ## 延迟与性能（给用户建议时）
 

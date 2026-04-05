@@ -78,12 +78,89 @@ class ToolDispatcher:
                 )
             if name == "run_terminal_cmd":
                 return self._run_terminal_cmd(args.get("command", ""))
+            if name == "github_search_repositories":
+                return self._github_search_repositories(args)
+            if name == "github_search_users":
+                return self._github_search_users(args)
+            if name == "github_get_user":
+                return self._github_get_user(args)
+            if name == "github_get_repository":
+                return self._github_get_repository(args)
         except PermissionError as e:
             return json.dumps({"error": "permission_denied", "detail": str(e)}, ensure_ascii=False)
         except Exception as e:
             return json.dumps({"error": "tool_failed", "detail": str(e)}, ensure_ascii=False)
 
         return json.dumps({"error": "unknown_tool", "name": name}, ensure_ascii=False)
+
+    def _github_disabled_reply(self) -> str | None:
+        if not self.settings.github_tools_enabled:
+            return json.dumps(
+                {
+                    "error": "github_tools_disabled",
+                    "detail": "已关闭 GitHub 工具（JQ_GITHUB_TOOLS=false）",
+                },
+                ensure_ascii=False,
+            )
+        return None
+
+    def _github_search_repositories(self, args: dict[str, Any]) -> str:
+        d = self._github_disabled_reply()
+        if d:
+            return d
+        from jq_agent.tools import github_client as gh
+
+        try:
+            per_page = int(args.get("per_page") or 10)
+        except (TypeError, ValueError):
+            per_page = 10
+        out = gh.github_search_repositories(
+            self.settings,
+            str(args.get("query", "")),
+            sort=str(args.get("sort") or "best-match"),
+            order=str(args.get("order") or "desc"),
+            per_page=per_page,
+        )
+        return json.dumps(out, ensure_ascii=False)
+
+    def _github_search_users(self, args: dict[str, Any]) -> str:
+        d = self._github_disabled_reply()
+        if d:
+            return d
+        from jq_agent.tools import github_client as gh
+
+        try:
+            per_page = int(args.get("per_page") or 10)
+        except (TypeError, ValueError):
+            per_page = 10
+        out = gh.github_search_users(
+            self.settings,
+            str(args.get("query", "")),
+            per_page=per_page,
+        )
+        return json.dumps(out, ensure_ascii=False)
+
+    def _github_get_user(self, args: dict[str, Any]) -> str:
+        d = self._github_disabled_reply()
+        if d:
+            return d
+        from jq_agent.tools import github_client as gh
+
+        out = gh.github_get_user(self.settings, str(args.get("username", "")))
+        return json.dumps(out, ensure_ascii=False)
+
+    def _github_get_repository(self, args: dict[str, Any]) -> str:
+        d = self._github_disabled_reply()
+        if d:
+            return d
+        from jq_agent.tools import github_client as gh
+
+        out = gh.github_get_repository(
+            self.settings,
+            str(args.get("owner", "")),
+            str(args.get("repo", "")),
+        )
+        return json.dumps(out, ensure_ascii=False)
 
     def _strict_check_write(self, rel: str) -> None:
         if self.settings.permission_mode != "strict":

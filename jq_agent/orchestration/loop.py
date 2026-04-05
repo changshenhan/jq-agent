@@ -188,7 +188,10 @@ async def run_agent_loop(
         ui_lang=ui_lang,
         active_session=session_name,
     )
-    tools = openai_tools(ide_agent=settings.ide_agent_tools)
+    tools = openai_tools(
+        ide_agent=settings.ide_agent_tools,
+        github_tools=settings.github_tools_enabled,
+    )
     system_full = _build_system_content(settings, ui_lang)
 
     if session_name and resume_session:

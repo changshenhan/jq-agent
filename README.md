@@ -34,7 +34,7 @@
 ## Features
 
 - **Agentic loop** — OpenAI-compatible **function calling** until done or **max iterations**.
-- **Tools** — `query_jq_docs`, `read_file`, `write_strategy_file`, `execute_backtest`, `analyze_backtest_metrics`, `lint_strategy_file` (ruff), `research_subtask`.
+- **Tools** — `query_jq_docs`, `read_file`, `write_strategy_file`, `execute_backtest`, `analyze_backtest_metrics`, `lint_strategy_file` (ruff), `research_subtask`; optional **GitHub REST** — `github_search_repositories`, `github_search_users`, `github_get_user`, `github_get_repository` (**`JQ_GITHUB_TOKEN`** / **`GITHUB_TOKEN`** optional for rate limits).
 - **IDE Agent tools** (default on; Kilocode-style workspace) — `list_directory`, `glob_files`, `grep_workspace`, `search_replace` (unique match), `run_terminal_cmd` (sandbox cwd; disabled under **`JQ_PERMISSION_MODE=strict`**).
 - **Path policy** — paths under workspace **`.jq-agent/`**; optional **`JQ_PERMISSION_MODE=strict`** → writes only **`scratchpad/`**.
 - **Sessions** — `jq-agent run --session NAME` / `--resume`; SQLite or JSON backend; **`fork_subagent_session`**; **`jq-agent session tree`**.
@@ -47,7 +47,7 @@
 - **Bilingual CLI** — **`--lang`**, **`JQ_LANG`**, **`jq-agent config lang`**.
 - **Terminal UX** — **Rich** panel (goal / steps / tokens), **spinner** for **`execute_backtest`**, colored table for **`analyze_backtest_metrics`**.
 - **Equity HTML** — strategy writes **`scratchpad/backtest_equity.csv`** → auto **`scratchpad/backtest_result.html`** (**Plotly 6** interactive chart).
-- **Web UI (optional)** — **`pip install 'jq-agent[web]'`** → **`jq-agent web`** → **`/`** (Tailwind CDN, Fetch Streams, rAF-batched log) + **`/api/run`** SSE (`log` / `done` / `error`); **Stop** aborts via **AbortController**.
+- **Web UI (optional)** — **`pip install 'jq-agent[web]'`** → **`jq-agent web`** → **`/`** (**Vite 6**, **React 19**, **Tailwind 4**, **Pretext** + **TanStack Virtual** for the log); **Fetch Streams**, **rAF**-batched log state + **`/api/run`** SSE; **Stop** = **AbortController**.
 
 ---
 
@@ -167,10 +167,10 @@ This project optimizes **perceived and wall-clock latency** along lines common i
 | **Interactive charts** | **Plotly.py ≥ 6** | HTML equity curves (`scratchpad/backtest_result.html`), CDN `plotly.js`, responsive toolbar — the de facto standard for browser-native quant dashboards in Python. |
 | **Terminal UI** | **Rich ≥ 14** | Panels, spinners, colored metric tables — widely adopted for modern Python CLIs. |
 | **CLI framework** | **Typer ≥ 0.24** | Built on Click; standard for typed command-line apps. |
-| **Optional Web UI** | **FastAPI + SSE + Tailwind (Play CDN)** | Minimal SPA at `jq-agent web`: **Fetch Streams** + **requestAnimationFrame**–batched log updates, **AbortController** cancel, **SSE** headers (`Cache-Control: no-cache`, **`X-Accel-Buffering: no`** for proxies). **Uvicorn [standard]** (httptools; **uvloop** on Unix) with raised **keep-alive** for connection reuse. |
+| **Optional Web UI** | **Vite 6 · React 19 · TS · Tailwind 4 · FastAPI SSE** | Production bundle under **`jq_agent/web/static/`** (committed so `pip install` works). Log column uses [**chenglou/pretext**](https://github.com/chenglou/pretext) (`@chenglou/pretext`) for **pre-wrap line layout without DOM reflow**, plus **TanStack Virtual** for viewport-only rows. Chunks still merge via **refs + rAF**; **startTransition** for status. Dev: **`npm run dev`** (**5173**) proxies **`/api`** to **`jq-agent web`** (**8765**). **Do not gzip** `text/event-stream` behind a proxy. |
 | **Examples** | **Plotly only** | `examples/plot_demo.py` matches the core chart stack (no parallel matplotlib dependency). |
 
-**Web UI latency & smoothness (what we optimize):** token/log lines are **not** appended on every chunk (which forces layout thrash); they are **batched per animation frame** (~60 Hz). The log area uses a **scroll container** with **`contain-content`** and **stable scrollbar gutter** to reduce reflow cost. **DNS-prefetch / preconnect** to the Tailwind CDN speeds cold loads. **Do not** put a gzip middleware in front of **`text/event-stream`** in your own reverse proxy (buffering hurts TTFT).
+**Web UI latency & smoothness:** SSE text is merged in a **ref buffer** and flushed on **requestAnimationFrame** (one **`setLogText`** per frame). **Pretext** computes wrapped lines at a fixed width (aligned with the log `font` CSS) so long transcripts virtualize without measuring **`offsetHeight`**. Rebuild after UI edits: `cd jq_agent/web/frontend && npm ci && npm run build`.
 
 ---
 
@@ -184,6 +184,14 @@ pip install -e .
 pip install -e ".[web]"    # optional: jq-agent web
 cp .env.example .env       # edit locally; do not commit
 ```
+
+The Web UI is a **Vite-built** SPA; the wheel already includes **`jq_agent/web/static/`**. To **rebuild** after changing `jq_agent/web/frontend/`:
+
+```bash
+cd jq_agent/web/frontend && npm ci && npm run build
+```
+
+**Dev workflow (hot reload):** terminal A — `jq-agent web` → **8765**; terminal B — `cd jq_agent/web/frontend && npm run dev` → **5173** (proxies API to 8765). Open **http://127.0.0.1:5173/**.
 
 Configuration is read from the **current working directory** (`.env` or environment variables).
 
@@ -217,6 +225,8 @@ jq-agent index status
 | `JQ_IDE_AGENT_TOOLS` | `true` / `false` — enable IDE tools (`list_directory`, `glob_files`, `grep_workspace`, `search_replace`, `run_terminal_cmd`) |
 | `JQ_TERMINAL_TIMEOUT_SEC` | Timeout for **`run_terminal_cmd`** (default `120`) |
 | `JQ_TERMINAL_MAX_OUTPUT_CHARS` | Max combined stdout+stderr chars from **`run_terminal_cmd`** |
+| `JQ_GITHUB_TOOLS` | `true` / `false` — enable **`github_*`** tools (GitHub REST API) |
+| `JQ_GITHUB_TOKEN` | Optional GitHub token (or use standard **`GITHUB_TOKEN`**) for higher API rate limits |
 | `JQ_LLM_HTTP2` | `true` / `false` — use HTTP/2 for LLM HTTP clients (requires **`h2`**) |
 | `JQ_LLM_HTTP_CONNECT_TIMEOUT` | Connect timeout (seconds), default `15` |
 | `JQ_LLM_HTTP_READ_TIMEOUT` | Read timeout (seconds), default `300` |

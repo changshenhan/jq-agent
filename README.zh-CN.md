@@ -27,7 +27,7 @@
 ## 功能概览
 
 - **Agent 循环** — 多轮调用兼容 OpenAI 的 **Function Calling**，直到结束或达到 **最大轮数（熔断）**。
-- **工具集** — `query_jq_docs`、`read_file`、`write_strategy_file`、`execute_backtest`、`analyze_backtest_metrics`、`lint_strategy_file`（ruff）、`research_subtask`（单轮 LLM）。
+- **工具集** — `query_jq_docs`、`read_file`、`write_strategy_file`、`execute_backtest`、`analyze_backtest_metrics`、`lint_strategy_file`（ruff）、`research_subtask`（单轮 LLM）；可选 **GitHub 公开 API** — `github_search_repositories`、`github_search_users`、`github_get_user`、`github_get_repository`（可选 **`JQ_GITHUB_TOKEN`** / **`GITHUB_TOKEN`** 提配额）。
 - **IDE Agent 工具**（默认开启，对标 Kilocode 工作区）— `list_directory`、`glob_files`、`grep_workspace`、`search_replace`（唯一匹配）、`run_terminal_cmd`（沙箱根目录执行；**strict** 模式下禁用终端）。
 - **路径策略** — 路径须在 `.jq-agent` 工作区内；可选 **`JQ_PERMISSION_MODE=strict`**，仅允许写入 `scratchpad/`。
 - **会话落盘** — `jq-agent run --session 名称` 将消息存到 `~/.jq-agent/sessions/`；`--resume` 接续历史。
@@ -43,7 +43,7 @@
 - **检索状态可见** — `jq-agent doctor` 与运行时 **system** 会说明切片索引与 Embeddings 缓存是否就绪。
 - **终端可视化** — 每轮迭代开始用 **Rich** 展示**任务目标、已用步数、累计 Token**；**`execute_backtest`** 执行时显示 **Spinner**；**`analyze_backtest_metrics`** 用**彩色表格**展示夏普、回撤、收益等。
 - **净值曲线 HTML** — 回测成功且策略写出 **`scratchpad/backtest_equity.csv`** 时，工具自动生成 **`scratchpad/backtest_result.html`**（**Plotly 6** 交互图，依赖已包含 **pandas**、**plotly**），并可尝试用系统浏览器打开。
-- **可选 Web 界面** — `pip install 'jq-agent[web]'` 后执行 **`jq-agent web`** 启动 **FastAPI**（默认 `127.0.0.1:8765`）：**`/`** 单页（**Tailwind** CDN、**Fetch Streams**、**rAF** 批量刷日志、**AbortController** 停止），**`/api/run`** **SSE**（`X-Accel-Buffering: no` 等代理友好头），文本与 CLI 在启用 `log_callback` 时一致。
+- **可选 Web 界面** — **`Vite 6 + React 19 + Tailwind 4`**（`jq_agent/web/frontend/` → `jq_agent/web/static/`）。日志区用 [**Pretext**](https://github.com/chenglou/pretext)（`@chenglou/pretext`）做 **pre-wrap** 折行（避免依赖 DOM 测量）+ **TanStack Virtual** 只渲染可视行；流式仍 **ref + rAF** 合并。**`jq-agent web`**（8765）、**`/api/run`** **SSE**、**AbortController** 停止。构建：`cd jq_agent/web/frontend && npm ci && npm run build`；开发：`npm run dev`（5173）。
 
 ---
 
@@ -107,7 +107,7 @@ flowchart LR
 - **交互图**：**Plotly.py 6.x**（净值 HTML、CDN `plotly.js`）。
 - **终端**：**Rich**（面板、表格、Spinner）。
 - **CLI**：**Typer**。
-- **可选 Web**：**FastAPI** + **SSE** + **Tailwind** + **Fetch Streams / rAF**（无 Node 构建）。英文详解见 **[README — Visualization stack](README.md#visualization-stack-mainstream-choices)**。
+- **可选 Web**：**Vite + React 19 + Tailwind 4** + **FastAPI SSE**（详见 **[README — Visualization stack](README.md#visualization-stack-mainstream-choices)**）。
 
 ---
 
@@ -121,6 +121,14 @@ cp .env.example .env         # 可选：在本地填写 JQ_*（切勿提交 .env
 ```
 
 配置从**当前工作目录**读取：在运行 `jq-agent` 的目录放置 `.env`，或仅使用环境变量。
+
+Web 界面为 **Vite** 构建产物（`jq_agent/web/static/` 已随包附带）。修改 `jq_agent/web/frontend/` 后请执行：
+
+```bash
+cd jq_agent/web/frontend && npm ci && npm run build
+```
+
+开发调试：终端 A 运行 **`jq-agent web`**（8765），终端 B 运行 **`npm run dev`**（5173，代理 `/api` 到 8765），浏览器打开 **http://127.0.0.1:5173/**。
 
 ### 文档索引（官方 SDK 切片 → JSON；语义向量由底座模型 Embeddings API 可选生成）
 
@@ -155,6 +163,8 @@ jq-agent index build --full   # 额外索引 alpha101 / alpha191 / technical_ana
 | `JQ_SESSION_BACKEND` | `sqlite`（默认，`~/.jq-agent/jq_agent.sqlite3`）或 `json` |
 | `JQ_SESSION_COMPACT_THRESHOLD` | 超过该条数触发 **会话压缩**（摘要早期轮次） |
 | `JQ_SESSION_COMPACT_KEEP` | 压缩后保留尾部条数 |
+| `JQ_GITHUB_TOOLS` | `true` / `false` — 是否启用 **`github_*`** 工具（GitHub REST API） |
+| `JQ_GITHUB_TOKEN` | 可选 GitHub token（或与标准变量 **`GITHUB_TOKEN`**）提高 API 配额 |
 
 ### 运行示例
 

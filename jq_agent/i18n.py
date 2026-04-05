@@ -111,6 +111,22 @@ STRINGS: dict[str, dict[str, str]] = {
         "zh": "界面语言",
         "en": "UI language",
     },
+    "doctor_github_tools": {
+        "zh": "GitHub 工具（github_search_* / github_get_*）",
+        "en": "GitHub tools (github_search_* / github_get_*)",
+    },
+    "doctor_github_token": {
+        "zh": "GitHub API token",
+        "en": "GitHub API token",
+    },
+    "doctor_github_token_yes": {
+        "zh": "已配置（JQ_GITHUB_TOKEN 或 GITHUB_TOKEN）",
+        "en": "set (JQ_GITHUB_TOKEN or GITHUB_TOKEN)",
+    },
+    "doctor_github_token_no": {
+        "zh": "未配置（匿名可访问公开接口，额度较低）",
+        "en": "unset (anonymous; lower rate limit)",
+    },
     "config_saved": {
         "zh": "已保存界面语言：{lang}",
         "en": "Saved UI language: {lang}",

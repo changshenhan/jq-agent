@@ -3,6 +3,106 @@ from __future__ import annotations
 from typing import Any
 
 
+def _github_tool_definitions() -> list[dict[str, Any]]:
+    """GitHub REST API（仅公开数据；可选 token 提配额）。"""
+    return [
+        {
+            "type": "function",
+            "function": {
+                "name": "github_search_repositories",
+                "description": (
+                    "在 GitHub 上搜索公开仓库（GitHub Search API）。"
+                    "q 支持官方语法，如 language:python、stars:>1000、user:orgname。"
+                    "用于发现项目、对比 star 数、找文档/示例仓库。"
+                ),
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "query": {
+                            "type": "string",
+                            "description": "搜索关键词或复合条件，例如 jqdatasdk、quant stars:>50",
+                        },
+                        "sort": {
+                            "type": "string",
+                            "description": (
+                                "排序：best-match（默认）、stars、forks、help-wanted-issues、updated"
+                            ),
+                        },
+                        "order": {"type": "string", "description": "asc 或 desc，默认 desc"},
+                        "per_page": {
+                            "type": "integer",
+                            "description": "每页条数 1–30，默认 10",
+                        },
+                    },
+                    "required": ["query"],
+                },
+            },
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "github_search_users",
+                "description": (
+                    "在 GitHub 上搜索用户/组织（公开资料）。"
+                    "可与 github_get_user 配合查看主页式字段。"
+                ),
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "query": {
+                            "type": "string",
+                            "description": "用户名关键词或 location:China 等",
+                        },
+                        "per_page": {
+                            "type": "integer",
+                            "description": "每页条数 1–30，默认 10",
+                        },
+                    },
+                    "required": ["query"],
+                },
+            },
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "github_get_user",
+                "description": (
+                    "获取 GitHub 用户或组织的公开主页信息（粉丝数、简介、仓库数、博客链接等）。"
+                    "对应网页 https://github.com/<username> 的公开 API 数据。"
+                ),
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "username": {
+                            "type": "string",
+                            "description": "登录名，不含 @",
+                        }
+                    },
+                    "required": ["username"],
+                },
+            },
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "github_get_repository",
+                "description": (
+                    "获取某公开仓库的元数据（描述、star、语言、默认分支、topics、许可证等）。"
+                    "对应 github.com/owner/repo 的公开信息。"
+                ),
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "owner": {"type": "string", "description": "仓库所有者登录名或组织名"},
+                        "repo": {"type": "string", "description": "仓库名（不含 owner 前缀）"},
+                    },
+                    "required": ["owner", "repo"],
+                },
+            },
+        },
+    ]
+
+
 def _ide_agent_tool_definitions() -> list[dict[str, Any]]:
     """Kilocode / IDE 风格：工作区浏览、搜索、局部编辑、沙箱终端。"""
     return [
@@ -118,7 +218,7 @@ def _ide_agent_tool_definitions() -> list[dict[str, Any]]:
     ]
 
 
-def openai_tools(*, ide_agent: bool = True) -> list[dict[str, Any]]:
+def openai_tools(*, ide_agent: bool = True, github_tools: bool = True) -> list[dict[str, Any]]:
     """OpenAI Chat Completions `tools` 列表（JSON Schema）。"""
     core: list[dict[str, Any]] = [
         {
@@ -290,6 +390,8 @@ def openai_tools(*, ide_agent: bool = True) -> list[dict[str, Any]]:
             },
         },
     ]
+    if github_tools:
+        core.extend(_github_tool_definitions())
     if ide_agent:
         core.extend(_ide_agent_tool_definitions())
     return core

@@ -84,6 +84,37 @@ def main() -> None:
         """在沙箱根目录执行命令（strict 模式禁用）。"""
         return _dispatch("run_terminal_cmd", command=command)
 
+    @mcp.tool()
+    def github_search_repositories(
+        query: str,
+        sort: str = "best-match",
+        order: str = "desc",
+        per_page: int = 10,
+    ) -> str:
+        """GitHub 搜索公开仓库（REST API）。"""
+        return _dispatch(
+            "github_search_repositories",
+            query=query,
+            sort=sort,
+            order=order,
+            per_page=per_page,
+        )
+
+    @mcp.tool()
+    def github_search_users(query: str, per_page: int = 10) -> str:
+        """GitHub 搜索用户/组织。"""
+        return _dispatch("github_search_users", query=query, per_page=per_page)
+
+    @mcp.tool()
+    def github_get_user(username: str) -> str:
+        """GitHub 用户/组织公开资料。"""
+        return _dispatch("github_get_user", username=username)
+
+    @mcp.tool()
+    def github_get_repository(owner: str, repo: str) -> str:
+        """GitHub 仓库元数据。"""
+        return _dispatch("github_get_repository", owner=owner, repo=repo)
+
     mcp.run(transport="stdio")
 
 
