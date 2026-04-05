@@ -7,7 +7,7 @@
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-3776AB?style=flat&logo=python&logoColor=white)](https://github.com/changshenhan/jq-agent)
 [![License: MIT](https://img.shields.io/badge/license-MIT-5c6bc0?style=flat)](LICENSE)
 
-[中文文档](README.zh-CN.md) · [Architecture](#architecture) · [CLI](#cli--language) · [Design notes (Kilocode)](#design-notes-kilocode-ide-style-agents-and-jq-agent) · [Tutorial](#integrated-tutorial-bilingual)
+[中文文档](README.zh-CN.md) · [Architecture](#architecture) · [Comparison](#comparison-claw-code-kilo-code--jq-agent) · [CLI](#cli--language) · [Tutorial](#integrated-tutorial-bilingual)
 
 </div>
 
@@ -59,6 +59,24 @@
 | CLI visualization + backtest metrics table + Plotly equity chart | **Done** |
 | FastAPI + SSE Web UI (`[web]`) | **Done** |
 | Full SaaS, broker adapters, bundled local embedding models | **Roadmap** — see below |
+
+---
+
+## Comparison: claw-code, Kilo Code & jq-agent
+
+This section answers the “study **claw-code** vs **Kilo Code**, compare pros/cons” style assignment: it is based on **public repositories and docs** only (no reliance on proprietary leaks as a source of truth). In this workspace, **claw-code** refers to the open **claw-code** rewrite project (e.g. [instructkr/claw-code](https://github.com/instructkr/claw-code)–style harness: Python + Rust ports, MCP, compaction). **Kilo Code** refers to the open **[kilo-org/kilocode](https://github.com/kilo-org/kilocode)** stack and [kilo.ai docs](https://kilo.ai/docs/).
+
+| Dimension | **claw-code** (harness rewrite) | **Kilo Code** | **jq-agent** (this repo) |
+|-----------|-----------------------------------|---------------|---------------------------|
+| **Primary goal** | Rebuild a **general agent harness** (tools, session, MCP, CLI) inspired by well-known harness patterns; Rust/Python runtime | **IDE-integrated coding agent**: central CLI + HTTP/SSE, many models, LSP, tools, cloud option | **Quant / JoinQuant domain agent**: jqdatasdk docs, **sandboxed** strategy files, **subprocess backtests**, metrics & plots |
+| **Surface** | CLI / runtime ports, plugin-style tools | VS Code / JetBrains / TUI / HTTP API | **Thin CLI** + optional **FastAPI Web UI** + **MCP stdio** |
+| **Context & memory** | Session state, **compaction**, MCP orchestration (as in upstream harness design) | Session manager, checkpoints, multi-mode (architect/coder/…) | **Session** JSON/SQLite, **LLM compaction**, retrieval injected into **system** |
+| **Strengths** | Deep **harness engineering** narrative; tool/MCP story; performance path (Rust) | **Mature product shape**: provider router, LSP, marketplace, multi-client | **Domain fit**: `query_jq_docs` + index slices + **execute_backtest** + **equity HTML**; minimal moving parts in **Python** |
+| **Trade-offs** | Heavy scope; not JoinQuant-specific | Larger install & ops; not specialized for **jqdatasdk** or broker rules | **Narrow**: not a full IDE agent; embeddings via **HTTP API** only (no bundled local embed model yet) |
+
+**Why jq-agent still matters next to them:** claw-code and Kilo Code optimize for **general software engineering** agents. jq-agent **intentionally** narrows the tool contract to **JoinQuant-style workflows** (docs → strategy → lint → backtest → metrics), which is what a quant stack audit cares about. Ideas cross-pollinate (sandbox, compaction, MCP, JSON repair), but **jq-agent is not a fork** of either codebase.
+
+**中文摘要：** 上表从**公开仓库**对比了本机参考的 **claw-code** 系 harness 重写与 **Kilo Code** 通用编程 Agent；**jq-agent** 选择做**聚宽/jqdatasdk 垂直闭环**（检索、沙箱、回测、指标与可视化），而非复刻 IDE 级全家桶——这与“学习 harness、再对比取舍”的任务一致，且边界清晰。
 
 ---
 
@@ -179,50 +197,6 @@ Priority: **`--lang` > `JQ_LANG` > saved config > `zh`**.
 ## Roadmap · next step
 
 Pluggable **local / self-hosted embedding** backends (explicit opt-in) for deployments that cannot use cloud Embeddings—without binding a single vendor. Chat and embeddings today are **HTTP APIs** only.
-
----
-
-## Design notes: Kilocode, IDE-style agents, and jq-agent
-
-This section answers the “**study Kilocode / IDE-style code agents and compare trade-offs**” style of task: what we looked at, what we adopted in spirit, and how jq-agent differs—without turning this repo into a fork of another product.
-
-### Compliance & sources
-
-- **jq-agent does not embed or redistribute proprietary or leaked third-party code.** Design choices are informed by **public documentation**, **open-source projects** (e.g. [Kilocode](https://github.com/Kilo-Org/kilocode) — open-source agentic coding platform), and common **agentic orchestration** patterns.
-- Any comparison to closed-source or unreleased tools should be understood as **high-level architecture**, not line-by-line equivalence.
-
-### What “Kilocode-style” and IDE agents generally optimize for
-
-| Theme | Typical focus |
-|-------|----------------|
-| **Surface** | Deep editor integration (VS Code, diff, terminal, multi-file refactors). |
-| **Scope** | General software engineering: large repos, many languages, Git workflows. |
-| **Strengths** | End-to-end coding UX, mature tool surfaces, community scale. |
-| **Trade-offs** | Heavier host assumptions; domain-specific runtimes (e.g. a quant backtest sandbox) are usually **not** first-class. |
-
-### What jq-agent optimizes for instead
-
-| Theme | jq-agent focus |
-|-------|----------------|
-| **Domain** | **JoinQuant / `jqdatasdk`**: doc-grounded tools, strategy files, **subprocess backtests**, metrics parsing. |
-| **Runtime** | **Thin CLI + library**; optional **FastAPI + SSE**; workspace under **`.jq-agent/`** with explicit **path policy**. |
-| **Knowledge** | **Keyword + optional GitHub slices + Embeddings API**—no bundled local embedding model required. |
-| **Trade-offs** | Not a full IDE; not aiming to replace Kilocode’s editor UX—**complementary** (e.g. use MCP to connect hosts if needed). |
-
-### Concepts borrowed in spirit (not copies)
-
-- **Tool loop** (plan → execute → observe), **sandboxed writes**, **session persistence**, **history compaction**, **resilient tool JSON**—common patterns across modern agent stacks; we implement a **minimal** variant tailored to quant workflows.
-- **MCP stdio** aligns with “tools as capabilities” without locking jq-agent to a single editor.
-
-### One-line positioning (for reviews / demos)
-
-**jq-agent is a domain-specific orchestration layer for JoinQuant-style quant agents, informed by open agent frameworks (e.g. Kilocode) and IDE-style patterns, but scoped to sandboxed tools, doc retrieval, and backtest/metrics—not a Kilocode clone.**
-
-### 中文摘要
-
-- **合规**：不以任何泄露或闭源代码为实现依据；仅参考公开文档与开源项目（如 Kilocode）及通用 Agent 编排思想。  
-- **对比**：Kilocode 等侧重 **通用编程 + 编辑器一体化**；jq-agent 侧重 **聚宽 / jqdatasdk 工具链、沙箱、子进程回测与指标**。二者 **场景不同**，jq-agent **不是复刻**，而是 **垂直领域的轻量编排层**。  
-- **结论**：若任务要求「学习并对照 Kilocode / Code Agent」，本仓库用 **实现 + 本节文字** 说明取舍；若需要更细的逐条对照，可在内部文档中扩展为独立对比表。
 
 ---
 
