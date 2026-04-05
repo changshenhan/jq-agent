@@ -7,7 +7,7 @@
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-3776AB?style=flat&logo=python&logoColor=white)](https://github.com/changshenhan/jq-agent)
 [![License: MIT](https://img.shields.io/badge/license-MIT-5c6bc0?style=flat)](LICENSE)
 
-[中文文档](README.zh-CN.md) · [Architecture](#architecture) · [IDE Agent](#ide-agent-mode-kilocode-style-workspace) · [对比](#comparison-claw-kilo-jq) · [CLI](#cli--language) · [Tutorial](#integrated-tutorial-bilingual)
+[中文文档](README.zh-CN.md) · [**AGENTS.md**](AGENTS.md)（AI Agent 协作说明） · [Architecture](#architecture) · [IDE Agent](#ide-agent-mode-kilocode-style-workspace) · [对比](#comparison-claw-kilo-jq) · [CLI](#cli--language) · [Tutorial](#integrated-tutorial-bilingual)
 
 </div>
 
@@ -245,6 +245,7 @@ Copy-paste paths may differ on your OS.
 7. For **live jqdatasdk** backtests, set account-related vars per JoinQuant docs; copy **`examples/real_price_smoke.py`** into **`scratchpad/`** and call **`execute_backtest`** from the agent (`pip install jqdatasdk`).
 8. **`JQ_PERMISSION_MODE=strict`** — restrict writes to **`scratchpad/`**.
 9. **`jq-agent mcp-stdio`** — wire MCP hosts (e.g. Cursor).
+10. **IDE Agent tools** — with **`JQ_IDE_AGENT_TOOLS=true`** (default), the model can use **`list_directory`**, **`glob_files`**, **`grep_workspace`**, **`search_replace`**, **`run_terminal_cmd`** inside the sandbox; set **`JQ_PERMISSION_MODE=strict`** if you want to disable the terminal tool.
 
 ### 中文
 
@@ -257,6 +258,7 @@ Copy-paste paths may differ on your OS.
 7. 真实行情回测：按聚宽要求配置账号相关变量；可将 **`examples/real_price_smoke.py`** 放入 **`scratchpad/`** 并通过工具执行（需 **`jqdatasdk`**）。
 8. **`JQ_PERMISSION_MODE=strict`** 限制仅写入 **`scratchpad/`**。
 9. **`jq-agent mcp-stdio`** 接入 MCP 宿主。
+10. **IDE Agent 工具** — 默认 **`JQ_IDE_AGENT_TOOLS=true`** 时可用列目录、glob、grep、局部替换、沙箱终端；若需禁用终端命令，使用 **`JQ_PERMISSION_MODE=strict`**（见上文 [IDE Agent](#ide-agent-mode-kilocode-style-workspace)）。
 
 ---
 
