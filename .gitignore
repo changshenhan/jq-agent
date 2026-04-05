@@ -11,5 +11,7 @@ dist/
 !.env.example
 # 本地沙箱、索引与缓存（运行后生成；勿提交）
 .jq-agent/
+# 项目内 JQ_DOC_INDEX_DIR（如 jq_index）生成的语义向量文件通常很大
+jq_index/embeddings.json
 # 发布仓库不包含 tests/（本地开发与 CI 可自行保留）
 tests/

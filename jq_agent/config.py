@@ -37,6 +37,13 @@ class Settings(BaseSettings):
         default_factory=lambda: Path.cwd() / ".jq-agent",
         description="Agent 工作区根目录（含 sandbox/、scratchpad/ 等子路径，工具路径须落在此之下）",
     )
+    doc_index_dir: str = Field(
+        default="",
+        description=(
+            "文档索引目录（chunks.json / embeddings.json）；空则使用 ~/.jq-agent/jqdatasdk_index。"
+            "可设为项目相对路径如 jq_index 或 .jq-agent/jqdatasdk_index，便于在 .env 里固定并纳入版本管理（仅 chunks）"
+        ),
+    )
 
     llm_stream: bool = Field(
         default=False,

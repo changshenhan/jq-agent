@@ -102,6 +102,7 @@ def create_app() -> FastAPI:
                         settings,
                         ui_lang=ui_lang,
                         log_callback=log_cb,
+                        event_callback=lambda d: queue.put_nowait(d),
                     )
                     usage_sum = 0
                     for u in result.usage_records:

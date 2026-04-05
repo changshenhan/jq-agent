@@ -7,6 +7,8 @@ from importlib import resources
 from pathlib import Path
 from typing import Any
 
+from jq_agent.config import Settings
+
 
 @dataclass
 class DocHit:
@@ -33,13 +35,13 @@ def load_chunks(path: Path | None = None) -> list[dict[str, Any]]:
     return json.loads(fallback.read_text(encoding="utf-8"))
 
 
-def load_merged_chunks() -> list[dict[str, Any]]:
+def load_merged_chunks(settings: Settings | None = None) -> list[dict[str, Any]]:
     """内置 doc_chunks + 用户 `jq-agent index build` 生成的切片（若存在）。"""
     base = list(load_chunks())
     try:
         from jq_agent.indexing.paths import chunks_json_path
 
-        p = chunks_json_path()
+        p = chunks_json_path(settings)
         if not p.exists():
             return base
         extra: list[dict[str, Any]] = json.loads(p.read_text(encoding="utf-8"))

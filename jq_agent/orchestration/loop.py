@@ -15,6 +15,7 @@ from jq_agent.i18n import UiLang, t
 from jq_agent.llm.client import AsyncChatClient
 from jq_agent.llm.streaming import stream_complete_async
 from jq_agent.orchestration.task_route import effective_jq_sdk_fast_path
+from jq_agent.orchestration.tool_ui import parallel_tools_label, tool_spinner_message
 from jq_agent.prompts.jq_sdk_fast_path import jq_sdk_fast_path_addon
 from jq_agent.prompts.router import model_system_addon
 from jq_agent.prompts.system import SYSTEM_PROMPT
@@ -116,37 +117,51 @@ async def gather_tool_results(
     dispatcher: ToolDispatcher,
     tool_calls: list[dict[str, Any]],
     console: Console | None = None,
+    *,
+    ui_lang: UiLang = "zh",
+    on_tool_event: Callable[[dict[str, Any]], None] | None = None,
 ) -> list[tuple[str, str, str]]:
-    """asyncio.gather + asyncio.to_thread，保持 tool_calls 顺序。"""
+    """asyncio.gather + asyncio.to_thread，保持 tool_calls 顺序。
+
+    单工具：按工具名显示 transient Progress（对齐 Open Harness observer 的「Running {tool}…」）。
+    多工具并行：仅一条总 Progress，避免多路 spinner 互相打断；可选 on_tool_event 供 SSE 结构化阶段。
+    """
     c = console or Console()
+    multi = len(tool_calls) > 1
 
     async def one(tc: dict[str, Any]) -> tuple[str, str, str]:
         fn = tc.get("function") or {}
         name = fn.get("name", "")
         args = fn.get("arguments", "")
         tid = tc.get("id", "")
-        if name == "execute_backtest":
-            with Progress(
-                SpinnerColumn(),
-                TextColumn("[progress.description]{task.description}"),
-                console=c,
-                transient=True,
-            ) as progress:
-                progress.add_task("正在执行回测…", total=None)
+        if on_tool_event:
+            on_tool_event({"event": "tool", "phase": "start", "name": name})
+        try:
+            if multi:
                 out = await asyncio.to_thread(dispatcher.dispatch, name, args)
-        elif name == "run_terminal_cmd":
-            with Progress(
-                SpinnerColumn(),
-                TextColumn("[progress.description]{task.description}"),
-                console=c,
-                transient=True,
-            ) as progress:
-                progress.add_task("正在执行终端命令…", total=None)
-                out = await asyncio.to_thread(dispatcher.dispatch, name, args)
-        else:
-            out = await asyncio.to_thread(dispatcher.dispatch, name, args)
+            else:
+                with Progress(
+                    SpinnerColumn(),
+                    TextColumn("[progress.description]{task.description}"),
+                    console=c,
+                    transient=True,
+                ) as progress:
+                    progress.add_task(tool_spinner_message(name, ui_lang), total=None)
+                    out = await asyncio.to_thread(dispatcher.dispatch, name, args)
+        finally:
+            if on_tool_event:
+                on_tool_event({"event": "tool", "phase": "end", "name": name})
         return tid, name, out
 
+    if multi:
+        with Progress(
+            SpinnerColumn(),
+            TextColumn("[progress.description]{task.description}"),
+            console=c,
+            transient=True,
+        ) as progress:
+            progress.add_task(parallel_tools_label(len(tool_calls), ui_lang), total=None)
+            return list(await asyncio.gather(*[one(tc) for tc in tool_calls]))
     return list(await asyncio.gather(*[one(tc) for tc in tool_calls]))
 
 
@@ -159,11 +174,13 @@ async def run_agent_loop(
     session_name: str | None = None,
     resume_session: bool = False,
     log_callback: Callable[[str], None] | None = None,
+    event_callback: Callable[[dict[str, Any]], None] | None = None,
 ) -> AgentResult:
     """Plan → Execute → Observe：全链路 asyncio。
 
     若提供 log_callback，则使用带 record 的 Console 将每次输出导出为纯文本并回调（用于 Web SSE）；
     此时忽略传入的 console。
+    event_callback 可选：用于 SSE 等场景的结构化事件（如 ``{"event":"tool","phase":"start","name":...}``）。
     """
     if log_callback is not None:
         c = Console(record=True, width=120, force_terminal=False)
@@ -275,7 +292,13 @@ async def run_agent_loop(
                     save_session(session_name, messages)
                 return result
 
-            batch = await gather_tool_results(dispatcher, tool_calls, console=c)
+            batch = await gather_tool_results(
+                dispatcher,
+                tool_calls,
+                console=c,
+                ui_lang=ui_lang,
+                on_tool_event=event_callback,
+            )
             for tid, name, tool_out in batch:
                 lbl = t("tool_line", ui_lang)
                 emit_print(f"[cyan]{lbl}[/cyan] {name}(…)")

@@ -13,6 +13,7 @@ const SSE_SEP = "\n\n";
 
 type SseEvent =
   | { event: "log"; text: string }
+  | { event: "tool"; phase: "start" | "end"; name: string }
   | { event: "done"; stopped_reason?: string; iterations?: number }
   | { event: "error"; detail?: string };
 
@@ -127,6 +128,9 @@ export default function App() {
         buf = parsed.rest;
         for (const ev of parsed.events) {
           if (ev.event === "log" && ev.text) appendLog(ev.text);
+          if (ev.event === "tool" && ev.phase === "start") {
+            startTransition(() => setStatus(`工具: ${ev.name}…`));
+          }
           if (ev.event === "done") {
             startTransition(() =>
               setStatus(

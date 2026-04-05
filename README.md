@@ -7,7 +7,7 @@
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-3776AB?style=flat&logo=python&logoColor=white)](https://github.com/changshenhan/jq-agent)
 [![License: MIT](https://img.shields.io/badge/license-MIT-5c6bc0?style=flat)](LICENSE)
 
-[中文文档](README.zh-CN.md) · [**AGENTS.md**](AGENTS.md)（AI Agent 协作说明） · [Architecture](#architecture) · [Performance](#performance--latency-mainstream-practices) · [Visualization](#visualization-stack-mainstream-choices) · [IDE Agent](#ide-agent-mode-kilocode-style-workspace) · [对比](#comparison-claw-kilo-jq) · [CLI](#cli--language) · [Tutorial](#integrated-tutorial-bilingual)
+[中文文档](README.zh-CN.md) · [**AGENTS.md**](AGENTS.md)（AI Agent 协作说明） · [UX & tool phases](#ux--tool-phases-open-harnessinspired) · [Architecture](#architecture) · [Performance](#performance--latency-mainstream-practices) · [Visualization](#visualization-stack-mainstream-choices) · [IDE Agent](#ide-agent-mode-kilocode-style-workspace) · [对比](#comparison-claw-kilo-jq) · [CLI](#cli--language) · [Tutorial](#integrated-tutorial-bilingual)
 
 </div>
 
@@ -45,9 +45,22 @@
 - **Usage log** — optional **`~/.jq-agent/usage.jsonl`**.
 - **JSON repair** — malformed tool arguments retried with heuristics.
 - **Bilingual CLI** — **`--lang`**, **`JQ_LANG`**, **`jq-agent config lang`**.
-- **Terminal UX** — **Rich** panel (goal / steps / tokens), **spinner** for **`execute_backtest`**, colored table for **`analyze_backtest_metrics`**.
+- **Terminal UX** — **Rich** panel (goal / steps / tokens); **transient spinner** labels **per tool name** (single tool call), or one **parallel batch** line when the model issues multiple tool calls at once—pattern inspired by [Open Harness](https://github.com/Open-Harness/open-harness) harness-loop observers (see [AGENTS.md](AGENTS.md)); colored table for **`analyze_backtest_metrics`**.
 - **Equity HTML** — strategy writes **`scratchpad/backtest_equity.csv`** → auto **`scratchpad/backtest_result.html`** (**Plotly 6** interactive chart).
-- **Web UI (optional)** — **`pip install 'jq-agent[web]'`** → **`jq-agent web`** → **`/`** (**Vite 6**, **React 19**, **Tailwind 4**, **Pretext** + **TanStack Virtual** for the log); **Fetch Streams**, **rAF**-batched log state + **`/api/run`** SSE; **Stop** = **AbortController**.
+- **Web UI (optional)** — **`pip install 'jq-agent[web]'`** → **`jq-agent web`** → **`/`** (**Vite 6**, **React 19**, **Tailwind 4**, **Pretext** + **TanStack Virtual** for the log); **`/api/run`** SSE sends **`log`** text plus structured **`tool`** events (`phase`: `start` / `end`, `name`: tool id) so the UI can show **“tool: …”** in the status line; **Stop** = **AbortController**.
+
+---
+
+## UX & tool phases (Open Harness–inspired)
+
+jq-agent does **not** ship the TypeScript / Effect stack of [Open Harness](https://github.com/Open-Harness/open-harness), but it **does** borrow two ideas from **harness-loop**-style tooling:
+
+| Idea | In jq-agent |
+|------|----------------|
+| **Observer-style progress** | CLI **`gather_tool_results`** shows a **named** Rich spinner for a **single** tool call; **parallel** tool batches use one **aggregate** spinner to avoid garbled output. |
+| **Structured tool phases** | When using **`jq-agent web`**, SSE may include **`{"event":"tool","phase":"start"|"end","name":"..."}`** in addition to **`log`** / **`done`**. |
+
+Details and scope: **[AGENTS.md](AGENTS.md)** (“借鉴 Open Harness”).
 
 ---
 
@@ -205,6 +218,8 @@ jq-agent index status
 # jq-agent index build --full   # large: alpha101 / alpha191 / technical_analysis
 ```
 
+**Project-local index (optional):** set **`JQ_DOC_INDEX_DIR`** in `.env` to a **relative path** (e.g. `jq_index`) under your repo, then run **`jq-agent index build`** once from that project root. `query_jq_docs` and **`jq-agent index status`** will use that directory. **`embeddings.json`** is often large—add it to `.gitignore` if you only want to commit **`chunks.json`**.
+
 ### Environment variables (reference)
 
 | Variable | Role |
@@ -214,6 +229,7 @@ jq-agent index status
 | `JQ_EMBEDDING_MODEL` | Embeddings model id |
 | `JQ_MODEL` | Chat model id |
 | `JQ_MAX_ITERATIONS` | Loop cap (default `16`) |
+| `JQ_DOC_INDEX_DIR` | Optional directory for **`chunks.json`** / **`embeddings.json`** (default `~/.jq-agent/jqdatasdk_index`); set e.g. `jq_index` in project `.env` so **`jq-agent index build`** is reproducible per repo |
 | `JQ_AGENT_TASK_MODE` | `auto` / `jq_sdk` / `general` — lightweight **jqdatasdk fast-path** (keyword route vs always-on vs off); CLI `--task-mode`; Web optional body |
 | `JQ_LANG` | CLI UI: `zh` or `en` |
 | `JQ_BACKTEST_TIMEOUT_SEC` | Subprocess timeout for **`execute_backtest`** |
@@ -262,9 +278,11 @@ Set secrets via **`export`** or entries in **`.env`** (not committed).
 | `jq-agent doctor` | Sandbox path, key presence, model, doc index status |
 | `jq-agent run "..."` | Agent loop |
 | `jq-agent run --session NAME --resume` | Continue session |
-| `jq-agent run --stream` | SSE streaming |
+| `jq-agent run --stream` | SSE streaming for chat completions |
+| `jq-agent run --task-mode <mode>` | Override **`JQ_AGENT_TASK_MODE`** (`auto` / `jq_sdk` / `general`) |
 | `jq-agent config lang` / `config show` | UI language (persisted) |
 | `jq-agent index build` / `index status` | Doc slices + optional embeddings |
+| `jq-agent index build --index-dir DIR` | One-shot override of **`JQ_DOC_INDEX_DIR`** |
 | `jq-agent session list` / `path` / `tree` | Sessions |
 | `jq-agent mcp-stdio` | MCP (`pip install 'jq-agent[mcp]'`) |
 | `jq-agent web` | Browser UI (`pip install 'jq-agent[web]'`) |

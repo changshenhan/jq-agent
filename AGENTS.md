@@ -25,6 +25,18 @@
 | MCP 服务 | `pip install 'jq-agent[mcp]' && jq-agent mcp-stdio` |
 | 浏览器 SSE UI | `pip install 'jq-agent[web]' && jq-agent web` → 打开提示的 `http://127.0.0.1:8765/` |
 
+## 借鉴 Open Harness（harness-loop）的落地
+
+本仓库可参考 [Open Harness / open-harness](https://github.com/Open-Harness/open-harness) 中的思路，已在 jq-agent 中**有选择地**对齐，而非引入其 TypeScript/Effect 技术栈：
+
+| 思路 | 在 jq-agent 中的体现 |
+|------|----------------------|
+| **Observer：按工具名更新进度** | CLI 单工具调用时使用 Rich transient Progress，文案见 `jq_agent/orchestration/tool_ui.py`；多工具并行时用一条总提示，避免多路 spinner 抢占终端。 |
+| **结构化阶段事件** | Web `/api/run` SSE 除 `log` / `done` 外，可收到 `{"event":"tool","phase":"start"|"end","name":...}`，前端用于状态行「工具: …」；CLI 不强制使用。 |
+| **工作流状态机** | jq-agent 仍以 **Plan → Execute → Observe** 与会话为主；若需「阶段 / 事件溯源」可逐步扩展，不照搬其 LibSQL 事件存储。 |
+
+若你在本机克隆了 `openharness-main` 仅作阅读，可与本仓库分开放置；实现以 `jq_agent/orchestration/` 为准。
+
 ## 工具清单（供你规划调用顺序）
 
 | 工具名 | 用途 |
@@ -49,6 +61,7 @@
 - **`JQ_LLM_API_KEY`**：大模型（兼容 `JQ_OPENAI_API_KEY`）。
 - **`JQ_LLM_BASE_URL` / `JQ_MODEL`**：底座与模型 id。
 - **`JQ_AGENT_TASK_MODE`**：`auto`（关键词路由 jqdatasdk/聚宽快路径）| `jq_sdk`（始终快路径）| `general`（不注入）。
+- **`JQ_DOC_INDEX_DIR`**：可选；文档索引 `chunks.json` / `embeddings.json` 所在目录（默认用户目录下 `jqdatasdk_index`）。可在仓库 `.env` 设为相对路径（如 `jq_index`），再执行 `jq-agent index build`，实现「项目级」固定输出路径；`embeddings.json` 体积大时通常不提交。
 - **`JQ_LLM_STREAM`**：流式输出（降低首字延迟，推荐 `true`）。
 - **`JQ_LLM_HTTP2` / `JQ_LLM_HTTP_*`**：HTTP/2、连接池与分阶段超时（见 README **Performance**）。
 - **`JQ_PHONE` / `JQ_PASSWORD`**：聚宽 / `jqdatasdk`（仅用户本机环境）。

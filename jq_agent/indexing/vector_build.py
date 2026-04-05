@@ -10,7 +10,13 @@ from typing import Any
 from jq_agent.config import Settings, load_settings
 from jq_agent.indexing.chunk_ast import build_all_chunks
 from jq_agent.indexing.fetch_github import fetch_sources
-from jq_agent.indexing.paths import cache_src_dir, chunks_json_path, embeddings_json_path, index_meta_path
+from jq_agent.indexing.paths import (
+    cache_src_dir,
+    chunks_json_path,
+    embeddings_json_path,
+    index_meta_path,
+    index_meta_read_path,
+)
 from jq_agent.llm.embeddings import embed_texts
 
 
@@ -28,7 +34,7 @@ def build_index(
     if not chunks:
         return {"error": "no_chunks", "paths": [str(p) for p in paths]}
 
-    idx_root = chunks_json_path().parent
+    idx_root = chunks_json_path(s).parent
     if reset and idx_root.exists():
         shutil.rmtree(idx_root)
     idx_root.mkdir(parents=True, exist_ok=True)
@@ -37,7 +43,7 @@ def build_index(
         {"chunk_id": c.chunk_id, "source": c.source, "version": c.version, "text": c.text}
         for c in chunks
     ]
-    chunks_json_path().write_text(json.dumps(rows, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    chunks_json_path(s).write_text(json.dumps(rows, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
     emb_info: dict[str, Any] = {"written": False}
     if s.llm_api_key.strip():
@@ -49,7 +55,7 @@ def build_index(
                 batch_texts = texts[i : i + batch]
                 all_vec.extend(embed_texts(batch_texts, s))
             emb_map = {rows[j]["chunk_id"]: all_vec[j] for j in range(len(rows))}
-            embeddings_json_path().write_text(json.dumps(emb_map), encoding="utf-8")
+            embeddings_json_path(s).write_text(json.dumps(emb_map), encoding="utf-8")
             emb_info = {"written": True, "dimensions": len(all_vec[0]) if all_vec else 0}
         except Exception as e:
             emb_info = {"written": False, "error": str(e)}
@@ -68,15 +74,17 @@ def build_index(
         "full_mode": full,
         "embeddings": emb_info,
     }
-    index_meta_path().write_text(json.dumps(meta, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    index_meta_path(s).write_text(json.dumps(meta, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     return meta
 
 
-def index_status() -> dict[str, Any]:
-    cp = chunks_json_path()
-    ep = embeddings_json_path()
-    meta_f = index_meta_path()
+def index_status(settings: Settings | None = None) -> dict[str, Any]:
+    s = settings or load_settings()
+    cp = chunks_json_path(s)
+    ep = embeddings_json_path(s)
+    meta_f = index_meta_read_path(s)
     out: dict[str, Any] = {
+        "index_dir": str(cp.parent),
         "chunks_path": str(cp),
         "chunks_exists": cp.exists(),
         "embeddings_path": str(ep),

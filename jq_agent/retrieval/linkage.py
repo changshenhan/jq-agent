@@ -10,9 +10,10 @@ from jq_agent.i18n import UiLang, t
 def safe_index_status() -> dict[str, Any]:
     """索引状态（关键词内置片段 + 可选 API 语义缓存）。"""
     try:
+        from jq_agent.config import load_settings
         from jq_agent.indexing.vector_build import index_status
 
-        return index_status()
+        return index_status(load_settings())
     except OSError:
         return {"chunks_exists": False, "embeddings_exists": False}
 

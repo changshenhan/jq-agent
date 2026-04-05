@@ -30,7 +30,7 @@ class ToolDispatcher:
         self._active_session = active_session
         self.policy = PathPolicy(settings.sandbox_dir)
         self.policy.mkdir()
-        self._chunks = load_merged_chunks()
+        self._chunks = load_merged_chunks(self.settings)
 
     def dispatch(self, name: str, arguments: str) -> str:
         args, jerr = parse_tool_arguments(arguments or "")

@@ -11,6 +11,7 @@ from jq_agent.llm.embeddings import cosine_similarity, embed_texts
 
 # 进程内缓存：避免每次 query 重复读大 JSON（同一进程多轮对话常见）
 _semantic_disk_cache: dict[str, Any] = {
+    "index_key": None,
     "emb_mtime_ns": None,
     "chunks_mtime_ns": None,
     "emb_map": None,
@@ -18,9 +19,12 @@ _semantic_disk_cache: dict[str, Any] = {
 }
 
 
-def _load_cached_semantic_index() -> tuple[dict[str, list[float]], list[dict[str, Any]]] | None:
-    ep = embeddings_json_path()
-    cp = chunks_json_path()
+def _load_cached_semantic_index(
+    settings: Settings,
+) -> tuple[dict[str, list[float]], list[dict[str, Any]]] | None:
+    cp = chunks_json_path(settings)
+    ep = embeddings_json_path(settings)
+    index_key = str(cp.resolve())
     if not ep.exists() or not cp.exists():
         return None
     try:
@@ -29,7 +33,8 @@ def _load_cached_semantic_index() -> tuple[dict[str, list[float]], list[dict[str
     except OSError:
         return None
     if (
-        _semantic_disk_cache["emb_mtime_ns"] == em_ns
+        _semantic_disk_cache.get("index_key") == index_key
+        and _semantic_disk_cache["emb_mtime_ns"] == em_ns
         and _semantic_disk_cache["chunks_mtime_ns"] == cm_ns
         and _semantic_disk_cache["emb_map"] is not None
         and _semantic_disk_cache["chunks"] is not None
@@ -42,6 +47,7 @@ def _load_cached_semantic_index() -> tuple[dict[str, list[float]], list[dict[str
         return None
     _semantic_disk_cache.update(
         {
+            "index_key": index_key,
             "emb_mtime_ns": em_ns,
             "chunks_mtime_ns": cm_ns,
             "emb_map": emb_map,
@@ -55,7 +61,7 @@ def semantic_hits(question: str, settings: Settings, *, top_k: int = 8) -> list[
     """若已执行 `jq-agent index build` 且配置了 API Key 与 embedding 缓存，则返回语义 Top-K。"""
     if not settings.llm_api_key.strip():
         return []
-    loaded = _load_cached_semantic_index()
+    loaded = _load_cached_semantic_index(settings)
     if loaded is None:
         return []
     emb_map, chunks = loaded

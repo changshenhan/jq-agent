@@ -10,6 +10,7 @@ from rich.console import Console
 from jq_agent import __version__
 from jq_agent.config import load_settings
 from jq_agent.i18n import UiLang, t
+from jq_agent.indexing.paths import jqdatasdk_index_dir
 from jq_agent.llm.transport import use_http2
 from jq_agent.locale_store import load_ui_lang, resolve_ui_lang, save_ui_lang, settings_path
 from jq_agent.orchestration.loop import format_stopped_reason, run_agent_loop
@@ -106,6 +107,7 @@ def doctor_cmd(ctx: typer.Context) -> None:
     c = Console()
     c.print(f"[bold]{t('doctor_title', ui_lang)}[/bold]  [dim]v{__version__}[/dim]")
     c.print(f"{t('doctor_sandbox', ui_lang)}: [cyan]{s.sandbox_dir.resolve()}[/cyan]")
+    c.print(f"Doc index dir (JQ_DOC_INDEX_DIR): [cyan]{jqdatasdk_index_dir(s).resolve()}[/cyan]")
     key_ok = bool(s.llm_api_key.strip())
     ks = t("doctor_key_set", ui_lang) if key_ok else t("doctor_key_unset", ui_lang)
     c.print(f"{t('doctor_key', ui_lang)}: [{'green' if key_ok else 'red'}]{ks}[/{'green' if key_ok else 'red'}]")
@@ -267,6 +269,12 @@ def index_build(
         "--no-reset",
         help="Do not wipe existing index dir before build",
     ),
+    index_dir: str | None = typer.Option(
+        None,
+        "--index-dir",
+        "-d",
+        help="Override JQ_DOC_INDEX_DIR for this run (path relative to cwd if not absolute)",
+    ),
 ) -> None:
     """Download JoinQuant/jqdatasdk from GitHub, chunk AST, persist JSON; optional Embeddings API cache."""
     _ = ctx
@@ -275,8 +283,11 @@ def index_build(
 
     c.print("[bold]Building doc index…[/bold] Slices from GitHub; optional embeddings via your LLM provider API.")
     c.print("[dim]Source: https://github.com/JoinQuant/jqdatasdk (master)[/dim]")
+    settings = load_settings()
+    if index_dir is not None and index_dir.strip():
+        settings = settings.model_copy(update={"doc_index_dir": index_dir.strip()})
     try:
-        meta = build_index(full=full, reset=not no_reset, settings=load_settings())
+        meta = build_index(full=full, reset=not no_reset, settings=settings)
     except RuntimeError as e:
         c.print(f"[red]{e}[/red]")
         c.print(

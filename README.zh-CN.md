@@ -7,7 +7,7 @@
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-3776AB?style=flat&logo=python&logoColor=white)](https://github.com/changshenhan/jq-agent)
 [![License: MIT](https://img.shields.io/badge/license-MIT-5c6bc0?style=flat)](LICENSE)
 
-[English README](README.md) · [**AGENTS.md**](AGENTS.md)（供 AI Agent / MCP 宿主阅读） · [架构说明](#架构) · [性能与延迟（英文详解）](README.md#performance--latency-mainstream-practices) · [可视化栈（英文详解）](README.md#visualization-stack-mainstream-choices) · [命令行与语言](#命令行与语言) · [集成教程（中英，见 README.md）](README.md#integrated-tutorial-bilingual)
+[English README](README.md) · [**AGENTS.md**](AGENTS.md)（供 AI Agent / MCP 宿主阅读） · [终端与工具阶段](#终端与工具阶段借鉴-open-harness) · [架构说明](#架构) · [性能与延迟（英文详解）](README.md#performance--latency-mainstream-practices) · [可视化栈（英文详解）](README.md#visualization-stack-mainstream-choices) · [命令行与语言](#命令行与语言) · [集成教程（中英，见 README.md）](README.md#integrated-tutorial-bilingual)
 
 
 </div>
@@ -41,9 +41,15 @@
 - **JSON 修复** — 工具参数解析失败时尝试去围栏与启发式修复。
 - **中英界面** — 通过 `--lang`、`JQ_LANG` 或 `jq-agent config lang` 切换 CLI **提示与标签**（与模型 system prompt 独立）。
 - **检索状态可见** — `jq-agent doctor` 与运行时 **system** 会说明切片索引与 Embeddings 缓存是否就绪。
-- **终端可视化** — 每轮迭代开始用 **Rich** 展示**任务目标、已用步数、累计 Token**；**`execute_backtest`** 执行时显示 **Spinner**；**`analyze_backtest_metrics`** 用**彩色表格**展示夏普、回撤、收益等。
+- **终端可视化** — 每轮迭代开始用 **Rich** 展示**任务目标、已用步数、累计 Token**；**单次**工具调用时 Spinner 文案**按工具名**显示；**并行多工具**时用一条总提示，避免多路 Spinner 互相打断（思路参考 [Open Harness](https://github.com/Open-Harness/open-harness) harness-loop，详见 [AGENTS.md](AGENTS.md)）；**`analyze_backtest_metrics`** 用**彩色表格**展示夏普、回撤、收益等。
 - **净值曲线 HTML** — 回测成功且策略写出 **`scratchpad/backtest_equity.csv`** 时，工具自动生成 **`scratchpad/backtest_result.html`**（**Plotly 6** 交互图，依赖已包含 **pandas**、**plotly**），并可尝试用系统浏览器打开。
-- **可选 Web 界面** — **`Vite 6 + React 19 + Tailwind 4`**（`jq_agent/web/frontend/` → `jq_agent/web/static/`）。日志区用 [**Pretext**](https://github.com/chenglou/pretext)（`@chenglou/pretext`）做 **pre-wrap** 折行（避免依赖 DOM 测量）+ **TanStack Virtual** 只渲染可视行；流式仍 **ref + rAF** 合并。**`jq-agent web`**（8765）、**`/api/run`** **SSE**、**AbortController** 停止。构建：`cd jq_agent/web/frontend && npm ci && npm run build`；开发：`npm run dev`（5173）。
+- **可选 Web 界面** — **`Vite 6 + React 19 + Tailwind 4`**（`jq_agent/web/frontend/` → `jq_agent/web/static/`）。日志区用 [**Pretext**](https://github.com/chenglou/pretext)（`@chenglou/pretext`）做 **pre-wrap** 折行 + **TanStack Virtual**；**`/api/run`** SSE 除 **`log`** 外还可下发结构化 **`tool`** 事件（`phase` / `name`），供状态行显示「工具: …」。**`jq-agent web`**（8765）、**AbortController** 停止。构建：`cd jq_agent/web/frontend && npm ci && npm run build`；开发：`npm run dev`（5173）。
+
+---
+
+## 终端与工具阶段（借鉴 Open Harness）
+
+本仓库**未**引入 Open Harness 的 TypeScript / Effect 技术栈，但借鉴其 **harness-loop** 的两点：**按工具名更新进度**、**结构化工具起止**（详见 **[AGENTS.md](AGENTS.md)**「借鉴 Open Harness」）。CLI 与 Web 行为以英文 **[README.md](README.md#ux--tool-phases-open-harnessinspired)** 为准。
 
 ---
 
@@ -138,6 +144,8 @@ cd jq_agent/web/frontend && npm ci && npm run build
 jq-agent index build          # 切片 + 可选 API 语义缓存（无 Key 则仅关键词）
 jq-agent index status
 jq-agent index build --full   # 额外索引 alpha101 / alpha191 / technical_analysis（文件很大）
+
+# 可选：在仓库 .env 中设置 JQ_DOC_INDEX_DIR=jq_index（相对路径），再执行 index build，索引落在项目内便于团队共享；embeddings.json 通常很大，可 gitignore 只提交 chunks.json
 ```
 
 未配置 Key 时，`query_jq_docs` 使用 **内置关键词片段** 与已构建的 **chunks**（偏关键词）；有 Embeddings 缓存时 **语义与关键词混合**。
@@ -151,6 +159,7 @@ jq-agent index build --full   # 额外索引 alpha101 / alpha191 / technical_ana
 | `JQ_EMBEDDING_MODEL` | Embeddings 模型 id（默认 `text-embedding-3-small`） |
 | `JQ_MODEL` | 如 `gpt-4o-mini`、`deepseek-chat` |
 | `JQ_MAX_ITERATIONS` | Agent 最大循环次数（默认 `16`） |
+| `JQ_DOC_INDEX_DIR` | 可选；文档索引目录（默认 `~/.jq-agent/jqdatasdk_index`），设为如 `jq_index` 则索引生成在项目内，配合 `.env` 固定路径 |
 | `JQ_AGENT_TASK_MODE` | `auto`（关键词识别后注入 jqdatasdk 快路径）/ `jq_sdk`（始终快路径）/ `general`（不注入）；CLI `--task-mode`；Web 可选覆盖 |
 | `JQ_LANG` | 界面语言：`zh` 或 `en` |
 | `JQ_BACKTEST_TIMEOUT_SEC` | `execute_backtest` 子进程超时秒数（默认 `120`） |
@@ -194,7 +203,9 @@ jq-agent run "查文档里沪深300的指数代码写法"
 | `jq-agent config lang` | 查看当前已保存的语言 |
 | `jq-agent config show` | 显示配置文件路径与当前语言 |
 | `jq-agent index build` | 从 GitHub 拉取 jqdatasdk 并构建切片索引（可选 API 语义缓存） |
+| `jq-agent index build --index-dir DIR` | 单次覆盖 **`JQ_DOC_INDEX_DIR`** |
 | `jq-agent index status` | 查看索引路径与元数据 |
+| `jq-agent run --task-mode <mode>` | 覆盖 **`JQ_AGENT_TASK_MODE`**（`auto` / `jq_sdk` / `general`） |
 | `jq-agent session list` | 列出已保存会话名 |
 | `jq-agent session path 名称` | 打印该会话 JSON 路径 |
 | `jq-agent session tree` | SQLite：列出会话父子与更新时间 |
