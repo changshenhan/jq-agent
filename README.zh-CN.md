@@ -28,6 +28,7 @@
 
 - **Agent 循环** — 多轮调用兼容 OpenAI 的 **Function Calling**，直到结束或达到 **最大轮数（熔断）**。
 - **工具集** — `query_jq_docs`、`read_file`、`write_strategy_file`、`execute_backtest`、`analyze_backtest_metrics`、`lint_strategy_file`（ruff）、`research_subtask`（单轮 LLM）。
+- **IDE Agent 工具**（默认开启，对标 Kilocode 工作区）— `list_directory`、`glob_files`、`grep_workspace`、`search_replace`（唯一匹配）、`run_terminal_cmd`（沙箱根目录执行；**strict** 模式下禁用终端）。
 - **路径策略** — 路径须在 `.jq-agent` 工作区内；可选 **`JQ_PERMISSION_MODE=strict`**，仅允许写入 `scratchpad/`。
 - **会话落盘** — `jq-agent run --session 名称` 将消息存到 `~/.jq-agent/sessions/`；`--resume` 接续历史。
 - **流式** — `--stream` 或 `JQ_LLM_STREAM=true`，SSE 降低首字延迟。
@@ -55,6 +56,7 @@
 | 终端体验（面板、回测等待动画、指标表） | **已完成** |
 | 回测 CSV → Plotly 净值图 | **已完成**（需策略输出约定 CSV） |
 | 浏览器最小界面（FastAPI + SSE） | **已完成**（可选 **`[web]`** 依赖） |
+| IDE 级沙箱工具（列目录 / 搜索 / 局部替换 / 终端） | **已完成**（`JQ_IDE_AGENT_TOOLS`） |
 | 完整托管产品、券商对接、内置本地嵌入模型 | **暂无**（见 [README.md Roadmap](README.md#roadmap--next-step)） |
 
 **粗估：** 对 README 所描述的 **MVP（CLI Agent + 检索 + 沙箱工具 + 可观测性）** 约 **85%～90%** 已落地；后续主要是**可选的本地/自建嵌入适配**与体验打磨，而非缺少核心闭环。
