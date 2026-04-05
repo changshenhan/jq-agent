@@ -7,7 +7,7 @@
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-3776AB?style=flat&logo=python&logoColor=white)](https://github.com/changshenhan/jq-agent)
 [![License: MIT](https://img.shields.io/badge/license-MIT-5c6bc0?style=flat)](LICENSE)
 
-[English README](README.md) · [**AGENTS.md**](AGENTS.md)（供 AI Agent / MCP 宿主阅读） · [架构说明](#架构) · [性能与延迟（英文详解）](README.md#performance--latency-mainstream-practices) · [命令行与语言](#命令行与语言) · [集成教程（中英，见 README.md）](README.md#integrated-tutorial-bilingual)
+[English README](README.md) · [**AGENTS.md**](AGENTS.md)（供 AI Agent / MCP 宿主阅读） · [架构说明](#架构) · [性能与延迟（英文详解）](README.md#performance--latency-mainstream-practices) · [可视化栈（英文详解）](README.md#visualization-stack-mainstream-choices) · [命令行与语言](#命令行与语言) · [集成教程（中英，见 README.md）](README.md#integrated-tutorial-bilingual)
 
 
 </div>
@@ -42,8 +42,8 @@
 - **中英界面** — 通过 `--lang`、`JQ_LANG` 或 `jq-agent config lang` 切换 CLI **提示与标签**（与模型 system prompt 独立）。
 - **检索状态可见** — `jq-agent doctor` 与运行时 **system** 会说明切片索引与 Embeddings 缓存是否就绪。
 - **终端可视化** — 每轮迭代开始用 **Rich** 展示**任务目标、已用步数、累计 Token**；**`execute_backtest`** 执行时显示 **Spinner**；**`analyze_backtest_metrics`** 用**彩色表格**展示夏普、回撤、收益等。
-- **净值曲线 HTML** — 回测成功且策略写出 **`scratchpad/backtest_equity.csv`** 时，工具自动生成 **`scratchpad/backtest_result.html`**（Plotly 交互图，依赖已包含 **pandas**、**plotly**），并可尝试用系统浏览器打开。
-- **可选 Web 界面** — `pip install 'jq-agent[web]'` 后执行 **`jq-agent web`** 启动 **FastAPI**（默认 `127.0.0.1:8765`）：**`/`** 单页表单，**`/api/run`** 以 **SSE** 推送 `log` / `done` / `error`，文本与 CLI 在启用 `log_callback` 时一致。
+- **净值曲线 HTML** — 回测成功且策略写出 **`scratchpad/backtest_equity.csv`** 时，工具自动生成 **`scratchpad/backtest_result.html`**（**Plotly 6** 交互图，依赖已包含 **pandas**、**plotly**），并可尝试用系统浏览器打开。
+- **可选 Web 界面** — `pip install 'jq-agent[web]'` 后执行 **`jq-agent web`** 启动 **FastAPI**（默认 `127.0.0.1:8765`）：**`/`** 单页表单（**Tailwind CSS** CDN 样式），**`/api/run`** 以 **SSE** 推送 `log` / `done` / `error`，文本与 CLI 在启用 `log_callback` 时一致。
 
 ---
 
@@ -101,6 +101,13 @@ flowchart LR
 ### 性能与延迟（概要）
 
 与业界 LLM 客户端常见做法对齐：**首字延迟**靠 **`JQ_LLM_STREAM`**；**RFC 7540 HTTP/2** 多路复用、**keep-alive** 减少多轮握手；**分阶段超时**（`JQ_LLM_HTTP_CONNECT_TIMEOUT` / `JQ_LLM_HTTP_READ_TIMEOUT`）；检索侧 **索引文件缓存**。完整参数表与说明见英文 **[README — Performance & latency](README.md#performance--latency-mainstream-practices)**。
+
+### 可视化栈（概要）
+
+- **交互图**：**Plotly.py 6.x**（净值 HTML、CDN `plotly.js`）。
+- **终端**：**Rich**（面板、表格、Spinner）。
+- **CLI**：**Typer**。
+- **可选 Web**：**FastAPI** + **Tailwind Play CDN**（无 Node 构建）。英文详解见 **[README — Visualization stack](README.md#visualization-stack-mainstream-choices)**。
 
 ---
 

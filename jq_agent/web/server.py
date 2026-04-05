@@ -30,37 +30,36 @@ def _apply_run_overrides(settings: Settings, body: RunBody) -> Settings:
     return settings.model_copy(update={"max_iterations": body.max_iter})
 
 
+# Tailwind CSS Play CDN — utility-first styling aligned with common 2024+ web tooling (no bundler).
 INDEX_HTML = """<!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh-CN" class="h-full">
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>jq-agent Web</title>
-  <style>
-    :root { font-family: system-ui, sans-serif; background: #0f1419; color: #e6edf3; }
-    body { max-width: 56rem; margin: 2rem auto; padding: 0 1rem; }
-    h1 { font-weight: 600; font-size: 1.25rem; }
-    textarea { width: 100%; min-height: 8rem; padding: 0.75rem; border-radius: 8px;
-      border: 1px solid #30363d; background: #161b22; color: inherit; box-sizing: border-box; }
-    button { margin-top: 0.75rem; padding: 0.5rem 1rem; border-radius: 8px; border: none;
-      background: #238636; color: #fff; cursor: pointer; font-weight: 500; }
-    button:disabled { opacity: 0.5; cursor: not-allowed; }
-    pre#log { margin-top: 1rem; padding: 1rem; border-radius: 8px; background: #161b22;
-      border: 1px solid #30363d; white-space: pre-wrap; word-break: break-word; min-height: 4rem;
-      font-size: 0.85rem; line-height: 1.45; }
-    .meta { font-size: 0.8rem; color: #8b949e; margin-top: 0.5rem; }
-    a { color: #58a6ff; }
-  </style>
+  <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body>
-  <h1>jq-agent · Web</h1>
-  <p class="meta">需要配置 <code>JQ_LLM_API_KEY</code>；输出为 SSE 流式日志。<a href="/health">/health</a></p>
-  <textarea id="prompt" placeholder="输入任务，例如：查文档里 get_price 的用法…"></textarea>
-  <div>
-    <button type="button" id="run">运行</button>
-    <span class="meta" id="status"></span>
+<body class="min-h-full bg-slate-950 text-slate-100 antialiased">
+  <div class="mx-auto max-w-3xl px-4 py-8">
+    <h1 class="text-xl font-semibold tracking-tight text-white">jq-agent · Web</h1>
+    <p class="mt-2 text-sm text-slate-400">
+      需要配置
+      <code class="rounded bg-slate-800 px-1 py-0.5 text-slate-200">JQ_LLM_API_KEY</code>
+      ；输出为 SSE 流式日志。
+      <a class="text-sky-400 hover:underline" href="/health">/health</a>
+    </p>
+    <textarea id="prompt" rows="8" placeholder="输入任务，例如：查文档里 get_price 的用法…"
+      class="mt-4 w-full resize-y rounded-lg border border-slate-700 bg-slate-900 px-3 py-2
+        text-sm text-slate-100 placeholder:text-slate-500
+        focus:border-sky-500 focus:outline-none focus:ring-1 focus:ring-sky-500"></textarea>
+    <div class="mt-3 flex flex-wrap items-center gap-3">
+      <button type="button" id="run" class="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium
+        text-white shadow hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-50">运行</button>
+      <span class="text-sm text-slate-400" id="status"></span>
+    </div>
+    <pre id="log" class="mt-4 min-h-16 whitespace-pre-wrap break-words rounded-lg border
+      border-slate-700 bg-slate-900 p-4 text-[0.85rem] leading-relaxed text-slate-200"></pre>
   </div>
-  <pre id="log"></pre>
   <script>
     const logEl = document.getElementById('log');
     const statusEl = document.getElementById('status');

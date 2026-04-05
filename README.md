@@ -7,7 +7,7 @@
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-3776AB?style=flat&logo=python&logoColor=white)](https://github.com/changshenhan/jq-agent)
 [![License: MIT](https://img.shields.io/badge/license-MIT-5c6bc0?style=flat)](LICENSE)
 
-[中文文档](README.zh-CN.md) · [**AGENTS.md**](AGENTS.md)（AI Agent 协作说明） · [Architecture](#architecture) · [Performance](#performance--latency-mainstream-practices) · [IDE Agent](#ide-agent-mode-kilocode-style-workspace) · [对比](#comparison-claw-kilo-jq) · [CLI](#cli--language) · [Tutorial](#integrated-tutorial-bilingual)
+[中文文档](README.zh-CN.md) · [**AGENTS.md**](AGENTS.md)（AI Agent 协作说明） · [Architecture](#architecture) · [Performance](#performance--latency-mainstream-practices) · [Visualization](#visualization-stack-mainstream-choices) · [IDE Agent](#ide-agent-mode-kilocode-style-workspace) · [对比](#comparison-claw-kilo-jq) · [CLI](#cli--language) · [Tutorial](#integrated-tutorial-bilingual)
 
 </div>
 
@@ -46,8 +46,8 @@
 - **JSON repair** — malformed tool arguments retried with heuristics.
 - **Bilingual CLI** — **`--lang`**, **`JQ_LANG`**, **`jq-agent config lang`**.
 - **Terminal UX** — **Rich** panel (goal / steps / tokens), **spinner** for **`execute_backtest`**, colored table for **`analyze_backtest_metrics`**.
-- **Equity HTML** — strategy writes **`scratchpad/backtest_equity.csv`** → auto **`scratchpad/backtest_result.html`** (Plotly).
-- **Web UI (optional)** — **`pip install 'jq-agent[web]'`** → **`jq-agent web`** → **`/`** + **`/api/run`** SSE (`log` / `done` / `error`).
+- **Equity HTML** — strategy writes **`scratchpad/backtest_equity.csv`** → auto **`scratchpad/backtest_result.html`** (**Plotly 6** interactive chart).
+- **Web UI (optional)** — **`pip install 'jq-agent[web]'`** → **`jq-agent web`** → **`/`** (Tailwind via CDN) + **`/api/run`** SSE (`log` / `done` / `error`).
 
 ---
 
@@ -157,6 +157,18 @@ This project optimizes **perceived and wall-clock latency** along lines common i
 | **Parallel tool calls** | Already **asyncio.gather** + **to_thread** for concurrent tools in one model turn. |
 
 **Optional provider-side features** (outside this repo): **prompt caching** / **prefix caching** on OpenAI-compatible endpoints — enable in your provider dashboard if available; jq-agent sends standard Chat Completions requests compatible with those features.
+
+---
+
+## Visualization stack (mainstream choices)
+
+| Layer | Library | Role |
+|-------|---------|------|
+| **Interactive charts** | **Plotly.py ≥ 6** | HTML equity curves (`scratchpad/backtest_result.html`), CDN `plotly.js`, responsive toolbar — the de facto standard for browser-native quant dashboards in Python. |
+| **Terminal UI** | **Rich ≥ 14** | Panels, spinners, colored metric tables — widely adopted for modern Python CLIs. |
+| **CLI framework** | **Typer ≥ 0.24** | Built on Click; standard for typed command-line apps. |
+| **Optional Web UI** | **FastAPI + SSE + Tailwind (Play CDN)** | Minimal single-page UI at `jq-agent web`: utility-first CSS without a Node build step. |
+| **Examples** | **Plotly only** | `examples/plot_demo.py` matches the core chart stack (no parallel matplotlib dependency). |
 
 ---
 

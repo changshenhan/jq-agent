@@ -1,8 +1,8 @@
 """
-终端外可视化小演示：保存一张 PNG 到脚本同目录（一般为 scratchpad/）。
+终端外可视化演示：用 Plotly 生成交互 HTML（与 `equity_html` / 主依赖栈一致）。
 
-依赖：pip install matplotlib
-执行：由 execute_backtest 运行本文件；成功后用系统图片查看器打开输出的路径。
+依赖：已随 jq-agent 安装 plotly、pandas（无需单独 pip matplotlib）。
+执行：由 execute_backtest 运行本文件；成功后可用浏览器打开输出的路径。
 """
 
 from __future__ import annotations
@@ -15,31 +15,41 @@ from pathlib import Path
 
 def _main() -> None:
     try:
-        import matplotlib
-
-        matplotlib.use("Agg")
-        import matplotlib.pyplot as plt
+        import plotly.graph_objects as go
     except ImportError:
-        print("ERROR: pip install matplotlib", file=sys.stderr)
+        print("ERROR: pip install plotly", file=sys.stderr)
         sys.exit(2)
 
-    out = Path(__file__).resolve().parent / "demo_equity.png"
+    out = Path(__file__).resolve().parent / "demo_equity.html"
     x = list(range(60))
     y = [100.0 + 8 * math.sin(i / 6) + i * 0.12 for i in x]
 
-    fig, ax = plt.subplots(figsize=(9, 3))
-    ax.plot(x, y, color="#2ecc71", linewidth=1.5)
-    ax.fill_between(x, y, alpha=0.15, color="#2ecc71")
-    ax.set_title("Demo equity curve (synthetic, not real backtest)")
-    ax.set_xlabel("day")
-    ax.set_ylabel("equity")
-    fig.tight_layout()
-    fig.savefig(out, dpi=120)
-    plt.close(fig)
+    fig = go.Figure()
+    fig.add_trace(
+        go.Scatter(
+            x=x,
+            y=y,
+            mode="lines",
+            name="Demo equity",
+            line=dict(width=2, color="#22c55e"),
+            fill="tozeroy",
+            fillcolor="rgba(34, 197, 94, 0.15)",
+        )
+    )
+    fig.update_layout(
+        title="Demo equity curve (synthetic, not real backtest)",
+        template="plotly_white",
+        hovermode="x unified",
+        margin=dict(l=48, r=24, t=56, b=48),
+        xaxis_title="day",
+        yaxis_title="equity",
+    )
+    cfg = {"displayModeBar": True, "responsive": True, "scrollZoom": True}
+    fig.write_html(str(out), include_plotlyjs="cdn", full_html=True, config=cfg)
 
     metrics = {
-        "note": "matplotlib demo png written",
-        "png_path": str(out),
+        "note": "plotly demo html written",
+        "html_path": str(out),
     }
     print("BACKTEST_METRICS_JSON:", json.dumps(metrics, ensure_ascii=False))
     print(f"OPEN_FILE_HINT: {out}")

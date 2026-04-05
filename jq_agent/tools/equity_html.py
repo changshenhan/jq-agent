@@ -55,7 +55,9 @@ def try_generate_equity_html(policy: Any) -> dict[str, Any]:
             y=y,
             mode="lines",
             name="Equity",
-            line=dict(width=2),
+            line=dict(width=2, color="#238636"),
+            fill="tozeroy",
+            fillcolor="rgba(35, 134, 54, 0.12)",
         )
     )
     fig.update_layout(
@@ -64,10 +66,21 @@ def try_generate_equity_html(policy: Any) -> dict[str, Any]:
         yaxis_title=str(val_col),
         template="plotly_white",
         hovermode="x unified",
+        margin=dict(l=48, r=24, t=56, b=48),
     )
+    plot_cfg: dict[str, bool | str] = {
+        "displayModeBar": True,
+        "responsive": True,
+        "scrollZoom": True,
+    }
 
     html_path = policy.ensure_under_sandbox(HTML_OUT_REL)
-    fig.write_html(str(html_path), include_plotlyjs="cdn", full_html=True)
+    fig.write_html(
+        str(html_path),
+        include_plotlyjs="cdn",
+        full_html=True,
+        config=plot_cfg,
+    )
 
     msg = "回测图表已生成，路径为：.jq-agent/scratchpad/backtest_result.html"
     opened = False

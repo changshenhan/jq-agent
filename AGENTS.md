@@ -52,6 +52,12 @@
 - **`JQ_IDE_AGENT_TOOLS`**：是否注册 IDE 类工具（默认 `true`）。
 - 完整列表见 **`.env.example`** 与 **[README.md](README.md)** 环境表。
 
+## 可视化栈（改 UI/图表时请对齐）
+
+- **图表**：**Plotly.py 6.x**（交互 HTML，与 `jq_agent/tools/equity_html.py` 一致）；**不要**在无理由时引入第二套绘图库（如 matplotlib）。
+- **终端**：**Rich**（面板、表格、Spinner）。
+- **可选 Web**：**FastAPI** + **Tailwind Play CDN**（`jq_agent/web/server.py` 内联页），保持无前端构建链。
+
 ## 延迟与性能（给用户建议时）
 
 - 优先建议 **`JQ_LLM_STREAM=true`** 改善体感延迟（SSE 流式）。
@@ -66,7 +72,7 @@
 ## 文档入口
 
 - 人类可读总览：**[README.md](README.md)**（英文为主）、**[README.zh-CN.md](README.zh-CN.md)**（中文）。
-- 架构、性能、路线图：见 README 内 **Architecture**、**Performance**、**Roadmap**、**IDE Agent**、**对比（claw-code / Kilo Code）** 等章节。
+- 架构、性能、可视化、路线图：见 README 内 **Architecture**、**Performance**、**Visualization stack**、**Roadmap**、**IDE Agent**、**对比（claw-code / Kilo Code）** 等章节。
 
 ## 免责声明
 
