@@ -7,7 +7,7 @@
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-3776AB?style=flat&logo=python&logoColor=white)](https://github.com/changshenhan/jq-agent)
 [![License: MIT](https://img.shields.io/badge/license-MIT-5c6bc0?style=flat)](LICENSE)
 
-[中文文档](README.zh-CN.md) · [Architecture](#architecture) · [对比](#comparison-claw-kilo-jq) · [CLI](#cli--language) · [Tutorial](#integrated-tutorial-bilingual)
+[中文文档](README.zh-CN.md) · [Architecture](#architecture) · [IDE Agent](#ide-agent-mode-kilocode-style-workspace) · [对比](#comparison-claw-kilo-jq) · [CLI](#cli--language) · [Tutorial](#integrated-tutorial-bilingual)
 
 </div>
 
@@ -51,6 +51,33 @@
 
 ---
 
+## IDE Agent mode (Kilocode-style workspace)
+
+jq-agent borrows **workspace + terminal** ideas from products like **Kilo Code** (browse, search, edit, run commands inside a project), while keeping the **JoinQuant / jqdatasdk** tool loop as the primary story.
+
+### What is included (default: `JQ_IDE_AGENT_TOOLS=true`)
+
+| Tool | Purpose |
+|------|---------|
+| **`list_directory`** | List files and subdirectories under a path in the sandbox (`.jq-agent/`). |
+| **`glob_files`** | Glob paths from the sandbox root (e.g. `**/*.py`, capped at 500 hits). |
+| **`grep_workspace`** | Line-oriented regex search across files (default glob `**/*.py`). |
+| **`search_replace`** | Replace **exactly one** occurrence of `old_string` in a file (IDE-like partial edit). |
+| **`run_terminal_cmd`** | Run a **single** parsed command (`shlex`, no shell pipelines) with **cwd = sandbox root**; stdout/stderr merged and truncated (`JQ_TERMINAL_MAX_OUTPUT_CHARS`). |
+
+These tools are also exposed via **`jq-agent mcp-stdio`** so editors (e.g. Cursor) can call them like other MCP tools.
+
+### Safety
+
+- **`JQ_PERMISSION_MODE=strict`**: **`run_terminal_cmd` is disabled** (terminal could otherwise bypass scratchpad-only writes). Other IDE tools remain available for read/search; use **`write_strategy_file`** / **`search_replace`** under **`scratchpad/`** as usual.
+- A small **blocklist** rejects obviously dangerous command strings; prefer **`python`**, **`ruff`**, **`pytest`**, etc., inside the sandbox.
+
+### What is *not* included (vs full Kilocode / IDE products)
+
+Not in this repo: **LSP client** wiring (Pyright/Pylance-style diagnostics into context), **first-party VS Code/JetBrains extensions**, **multi-root workspaces**, **hosted cloud sandboxes**, or **Kilo Gateway–style** routing. Those would be separate layers. jq-agent focuses on a **lightweight Python CLI + MCP + optional Web UI** with a **quant-specific** toolset (`query_jq_docs`, **`execute_backtest`**, metrics, Plotly equity HTML).
+
+---
+
 ## Project status
 
 | Area | Status |
@@ -74,7 +101,7 @@
 | **交互形态** | CLI / 运行时、插件式工具 | VS Code / JetBrains / 终端 TUI / HTTP API | **轻量 CLI** + 可选 **FastAPI + SSE** 网页 + **MCP stdio** |
 | **上下文与记忆** | 会话状态、**压缩（compaction）**、MCP 编排 | 会话管理、检查点、多模式（架构师/编码等） | **JSON / SQLite 会话**、**LLM 压缩**、检索结果写入 **system** |
 | **长处** | harness 工程叙事完整；工具与 MCP 清晰；Rust 路径偏性能与工程化 | 产品化程度高：路由多模型、LSP、生态与多端 | **领域贴合**：`query_jq_docs`、官方切片索引、**execute_backtest**、**净值 HTML**；核心栈 **Python**、依赖面可控 |
-| **短处 / 代价** | 体量大；不解决聚宽业务与合规细节 | 安装与运维更重；不对 **jqdatasdk** 或券商规则做专门抽象 | **范围窄**：不是完整 IDE Agent；向量检索目前依赖**云端 Embeddings HTTP API**（尚未内置本地嵌入模型） |
+| **短处 / 代价** | 体量大；不解决聚宽业务与合规细节 | 安装与运维更重；不对 **jqdatasdk** 或券商规则做专门抽象 | **垂直优先**：已提供 **沙箱内 IDE 式工具**（列目录 / glob / grep / 局部替换 / 终端）与 **MCP**，但**不含** Kilocode 级 **LSP 注入、官方 IDE 插件、云端 Gateway**；向量检索依赖 **Embeddings HTTP API**（无内置本地嵌入模型）。 |
 
 **与三者关系：** claw-code 与 Kilo Code 都优先服务**通用写代码**场景；**jq-agent** 有意把工具契约收束到 **聚宽式工作流**（文档 → 策略 → Lint → 回测 → 指标），便于量化侧评审。实现上借鉴了沙箱、压缩、MCP、JSON 修复等常见思路，但 **jq-agent 并非二者源码的分支或 fork**。
 
