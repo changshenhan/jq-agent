@@ -89,6 +89,36 @@ class Settings(BaseSettings):
         description="run_terminal_cmd 合并 stdout+stderr 最大字符数，超出截断",
     )
 
+    # --- LLM HTTP 客户端（延迟与吞吐：HTTP/2、连接池、分阶段超时）---
+    llm_http_connect_timeout: float = Field(
+        default=15.0,
+        ge=1.0,
+        le=120.0,
+        description="连接底座超时（秒）；过短易误判弱网，过长拖慢失败检测",
+    )
+    llm_http_read_timeout: float = Field(
+        default=300.0,
+        ge=30.0,
+        le=3600.0,
+        description="读响应超时（秒）；长思维链/大输出需足够大",
+    )
+    llm_http_keepalive: int = Field(
+        default=32,
+        ge=4,
+        le=256,
+        description="httpx keep-alive 连接池大小（多轮对话复用连接）",
+    )
+    llm_http_max_connections: int = Field(
+        default=100,
+        ge=8,
+        le=512,
+        description="httpx 最大并发连接数上限",
+    )
+    llm_http2: bool = Field(
+        default=True,
+        description="启用 HTTP/2（需依赖 h2；多路复用，与 OpenAI/兼容网关主流实践一致）",
+    )
+
 
 def load_settings() -> Settings:
     """读取配置；兼容旧环境变量 JQ_OPENAI_API_KEY / JQ_OPENAI_BASE_URL。"""

@@ -46,9 +46,17 @@
 
 - **`JQ_LLM_API_KEY`**：大模型（兼容 `JQ_OPENAI_API_KEY`）。
 - **`JQ_LLM_BASE_URL` / `JQ_MODEL`**：底座与模型 id。
+- **`JQ_LLM_STREAM`**：流式输出（降低首字延迟，推荐 `true`）。
+- **`JQ_LLM_HTTP2` / `JQ_LLM_HTTP_*`**：HTTP/2、连接池与分阶段超时（见 README **Performance**）。
 - **`JQ_PHONE` / `JQ_PASSWORD`**：聚宽 / `jqdatasdk`（仅用户本机环境）。
 - **`JQ_IDE_AGENT_TOOLS`**：是否注册 IDE 类工具（默认 `true`）。
 - 完整列表见 **`.env.example`** 与 **[README.md](README.md)** 环境表。
+
+## 延迟与性能（给用户建议时）
+
+- 优先建议 **`JQ_LLM_STREAM=true`** 改善体感延迟（SSE 流式）。
+- 默认已启用 **HTTP/2**（`h2`）与 **httpx 连接复用**；弱网可调 **`JQ_LLM_HTTP_CONNECT_TIMEOUT`**。
+- 语义检索对 **`index build`** 生成的大 JSON 有 **进程内 mtime 缓存**，无需改配置。
 
 ## MCP 集成提示
 
@@ -58,7 +66,7 @@
 ## 文档入口
 
 - 人类可读总览：**[README.md](README.md)**（英文为主）、**[README.zh-CN.md](README.zh-CN.md)**（中文）。
-- 架构与路线图：见 README 内 **Architecture**、**Roadmap**、**IDE Agent**、**对比（claw-code / Kilo Code）** 等章节。
+- 架构、性能、路线图：见 README 内 **Architecture**、**Performance**、**Roadmap**、**IDE Agent**、**对比（claw-code / Kilo Code）** 等章节。
 
 ## 免责声明
 

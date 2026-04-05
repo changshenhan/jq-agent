@@ -7,7 +7,7 @@
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-3776AB?style=flat&logo=python&logoColor=white)](https://github.com/changshenhan/jq-agent)
 [![License: MIT](https://img.shields.io/badge/license-MIT-5c6bc0?style=flat)](LICENSE)
 
-[English README](README.md) · [**AGENTS.md**](AGENTS.md)（供 AI Agent / MCP 宿主阅读） · [架构说明](#架构) · [命令行与语言](#命令行与语言) · [集成教程（中英，见 README.md）](README.md#integrated-tutorial-bilingual)
+[English README](README.md) · [**AGENTS.md**](AGENTS.md)（供 AI Agent / MCP 宿主阅读） · [架构说明](#架构) · [性能与延迟（英文详解）](README.md#performance--latency-mainstream-practices) · [命令行与语言](#命令行与语言) · [集成教程（中英，见 README.md）](README.md#integrated-tutorial-bilingual)
 
 
 </div>
@@ -98,6 +98,10 @@ flowchart LR
   X -->|stdout / stderr| Loop
 ```
 
+### 性能与延迟（概要）
+
+与业界 LLM 客户端常见做法对齐：**首字延迟**靠 **`JQ_LLM_STREAM`**；**RFC 7540 HTTP/2** 多路复用、**keep-alive** 减少多轮握手；**分阶段超时**（`JQ_LLM_HTTP_CONNECT_TIMEOUT` / `JQ_LLM_HTTP_READ_TIMEOUT`）；检索侧 **索引文件缓存**。完整参数表与说明见英文 **[README — Performance & latency](README.md#performance--latency-mainstream-practices)**。
+
 ---
 
 ## 快速开始
@@ -135,6 +139,9 @@ jq-agent index build --full   # 额外索引 alpha101 / alpha191 / technical_ana
 | `JQ_LANG` | 界面语言：`zh` 或 `en` |
 | `JQ_BACKTEST_TIMEOUT_SEC` | `execute_backtest` 子进程超时秒数（默认 `120`） |
 | `JQ_LLM_STREAM` | `true` / `false` — 是否 SSE 流式调用 chat completions |
+| `JQ_LLM_HTTP2` | `true` / `false` — 是否对 LLM 使用 HTTP/2（需已安装 `h2`） |
+| `JQ_LLM_HTTP_CONNECT_TIMEOUT` / `JQ_LLM_HTTP_READ_TIMEOUT` | 连接与读超时（秒） |
+| `JQ_LLM_HTTP_KEEPALIVE` / `JQ_LLM_HTTP_MAX_CONNECTIONS` | 连接池 keep-alive 与最大连接数 |
 | `JQ_PERMISSION_MODE` | `normal`（默认）或 `strict`（仅允许写入 `scratchpad/`） |
 | `JQ_USAGE_LOG` | 是否记录用量到 `~/.jq-agent/usage.jsonl` |
 | `JQ_AUTO_PARSE_BACKTEST_METRICS` | 为 `true` 时，`execute_backtest` 的 JSON 可含 `auto_parsed_metrics` |

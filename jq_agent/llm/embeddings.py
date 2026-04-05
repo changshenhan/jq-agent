@@ -5,11 +5,8 @@ from __future__ import annotations
 import math
 from typing import Any
 
-import httpx
-
 from jq_agent.config import Settings
-
-_TIMEOUT = httpx.Timeout(120.0, connect=30.0)
+from jq_agent.llm.embeddings_client import get_sync_embeddings_client
 
 
 def embed_texts(texts: list[str], settings: Settings) -> list[list[float]]:
@@ -22,10 +19,10 @@ def embed_texts(texts: list[str], settings: Settings) -> list[list[float]]:
         "Content-Type": "application/json",
     }
     body: dict[str, Any] = {"model": settings.embedding_model, "input": texts}
-    with httpx.Client(timeout=_TIMEOUT) as client:
-        r = client.post(url, headers=headers, json=body)
-        r.raise_for_status()
-        data = r.json()
+    client = get_sync_embeddings_client(settings)
+    r = client.post(url, headers=headers, json=body)
+    r.raise_for_status()
+    data = r.json()
     items = data.get("data") or []
     sorted_items = sorted(items, key=lambda x: int(x.get("index", 0)))
     return [list(x["embedding"]) for x in sorted_items]

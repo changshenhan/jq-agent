@@ -5,18 +5,24 @@ from typing import Any
 import httpx
 
 from jq_agent.config import Settings
-
-_DEFAULT_TIMEOUT = httpx.Timeout(120.0, connect=30.0)
-_DEFAULT_LIMITS = httpx.Limits(max_keepalive_connections=8, max_connections=16)
+from jq_agent.llm.transport import (
+    build_httpx_limits,
+    build_httpx_timeout,
+    use_http2,
+)
 
 
 class AsyncChatClient:
-    """OpenAI 兼容 Chat Completions — 全链路 asyncio + httpx.AsyncClient。"""
+    """OpenAI 兼容 Chat Completions — asyncio + httpx.AsyncClient（连接池 / 可选 HTTP/2）。"""
 
     def __init__(self, settings: Settings) -> None:
         self.settings = settings
         self._url = settings.llm_base_url.rstrip("/") + "/chat/completions"
-        self._client = httpx.AsyncClient(timeout=_DEFAULT_TIMEOUT, limits=_DEFAULT_LIMITS)
+        self._client = httpx.AsyncClient(
+            timeout=build_httpx_timeout(settings),
+            limits=build_httpx_limits(settings),
+            http2=use_http2(settings),
+        )
 
     async def aclose(self) -> None:
         await self._client.aclose()

@@ -9,6 +9,7 @@ from rich.console import Console
 from jq_agent import __version__
 from jq_agent.config import load_settings
 from jq_agent.i18n import UiLang, t
+from jq_agent.llm.transport import use_http2
 from jq_agent.locale_store import load_ui_lang, resolve_ui_lang, save_ui_lang, settings_path
 from jq_agent.orchestration.loop import format_stopped_reason, run_agent_loop
 from jq_agent.retrieval.linkage import doctor_retrieval_lines
@@ -103,6 +104,9 @@ def doctor_cmd(ctx: typer.Context) -> None:
     c.print(f"Usage log (JQ_USAGE_LOG): {s.usage_log}")
     c.print(f"Session backend (JQ_SESSION_BACKEND): [cyan]{s.session_backend}[/cyan]")
     c.print(f"IDE Agent tools (JQ_IDE_AGENT_TOOLS): [{'green' if s.ide_agent_tools else 'dim'}]{s.ide_agent_tools}[/]")
+    c.print(
+        f"LLM HTTP/2 (JQ_LLM_HTTP2 + h2): [{'green' if use_http2(s) else 'dim'}]{use_http2(s)}[/]"
+    )
     c.print(f"{t('doctor_ui_lang', ui_lang)}: [yellow]{ui_lang}[/yellow]")
     c.print()
     for line in doctor_retrieval_lines(ui_lang):

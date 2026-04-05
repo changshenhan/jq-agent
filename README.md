@@ -7,7 +7,7 @@
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-3776AB?style=flat&logo=python&logoColor=white)](https://github.com/changshenhan/jq-agent)
 [![License: MIT](https://img.shields.io/badge/license-MIT-5c6bc0?style=flat)](LICENSE)
 
-[中文文档](README.zh-CN.md) · [**AGENTS.md**](AGENTS.md)（AI Agent 协作说明） · [Architecture](#architecture) · [IDE Agent](#ide-agent-mode-kilocode-style-workspace) · [对比](#comparison-claw-kilo-jq) · [CLI](#cli--language) · [Tutorial](#integrated-tutorial-bilingual)
+[中文文档](README.zh-CN.md) · [**AGENTS.md**](AGENTS.md)（AI Agent 协作说明） · [Architecture](#architecture) · [Performance](#performance--latency-mainstream-practices) · [IDE Agent](#ide-agent-mode-kilocode-style-workspace) · [对比](#comparison-claw-kilo-jq) · [CLI](#cli--language) · [Tutorial](#integrated-tutorial-bilingual)
 
 </div>
 
@@ -142,6 +142,24 @@ flowchart LR
 
 ---
 
+## Performance & latency (mainstream practices)
+
+This project optimizes **perceived and wall-clock latency** along lines common in production LLM clients:
+
+| Practice | What jq-agent does |
+|----------|---------------------|
+| **Time-to-first-token (TTFT)** | Enable **`JQ_LLM_STREAM=true`** (or `--stream`) so tokens render over **SSE** instead of waiting for the full completion. |
+| **HTTP/2** ([RFC 7540](https://www.rfc-editor.org/rfc/rfc7540)) | **`h2`** is a core dependency; **`httpx`** uses **HTTP/2** when **`JQ_LLM_HTTP2=true`** (default) and the provider supports it — better **multiplexing** on a single connection to the API edge. |
+| **Connection reuse** | **Keep-alive pools** (`JQ_LLM_HTTP_KEEPALIVE`, **`JQ_LLM_HTTP_MAX_CONNECTIONS`**) so multi-turn **Agent loops** avoid repeated **TCP + TLS handshakes** on every chat/embed call. |
+| **Staged timeouts** | Separate **connect** vs **read** timeouts (`JQ_LLM_HTTP_CONNECT_TIMEOUT`, **`JQ_LLM_HTTP_READ_TIMEOUT`**) — fail fast on dead endpoints; allow long generations. |
+| **Embeddings client reuse** | **`embed_texts`** uses a **persistent sync `httpx.Client`** per base URL + key prefix (not one short-lived client per call). |
+| **Semantic index cache** | After `index build`, **`chunks.json` + `embeddings.json`** are **memory-cached** (invalidated on file mtime) to avoid re-reading large JSON on every **`query_jq_docs`**. |
+| **Parallel tool calls** | Already **asyncio.gather** + **to_thread** for concurrent tools in one model turn. |
+
+**Optional provider-side features** (outside this repo): **prompt caching** / **prefix caching** on OpenAI-compatible endpoints — enable in your provider dashboard if available; jq-agent sends standard Chat Completions requests compatible with those features.
+
+---
+
 ## Quick start
 
 ```bash
@@ -185,8 +203,13 @@ jq-agent index status
 | `JQ_IDE_AGENT_TOOLS` | `true` / `false` — enable IDE tools (`list_directory`, `glob_files`, `grep_workspace`, `search_replace`, `run_terminal_cmd`) |
 | `JQ_TERMINAL_TIMEOUT_SEC` | Timeout for **`run_terminal_cmd`** (default `120`) |
 | `JQ_TERMINAL_MAX_OUTPUT_CHARS` | Max combined stdout+stderr chars from **`run_terminal_cmd`** |
+| `JQ_LLM_HTTP2` | `true` / `false` — use HTTP/2 for LLM HTTP clients (requires **`h2`**) |
+| `JQ_LLM_HTTP_CONNECT_TIMEOUT` | Connect timeout (seconds), default `15` |
+| `JQ_LLM_HTTP_READ_TIMEOUT` | Read timeout (seconds), default `300` |
+| `JQ_LLM_HTTP_KEEPALIVE` | Keep-alive pool size, default `32` |
+| `JQ_LLM_HTTP_MAX_CONNECTIONS` | Max connections cap, default `100` |
 
-See **`.env.example`** for the full list and comments.
+See **`.env.example`** for the full list and comments. Tuning guide: [Performance & latency](#performance--latency-mainstream-practices).
 
 ### Run
 
