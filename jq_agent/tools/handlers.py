@@ -4,6 +4,7 @@ import asyncio
 import json
 import os
 import re
+import shlex
 import subprocess
 import sys
 from typing import Any
@@ -59,6 +60,24 @@ class ToolDispatcher:
                 return self._research_subtask(args.get("task", ""))
             if name == "fork_subagent_session":
                 return self._fork_subagent(args.get("child_slug", ""))
+            if name == "list_directory":
+                return self._list_directory(args.get("path") or "", args.get("max_entries"))
+            if name == "glob_files":
+                return self._glob_files(args.get("pattern", ""))
+            if name == "grep_workspace":
+                return self._grep_workspace(
+                    args.get("regex", ""),
+                    args.get("file_glob") or "**/*.py",
+                    args.get("max_matches"),
+                )
+            if name == "search_replace":
+                return self._search_replace(
+                    args.get("path", ""),
+                    args.get("old_string", ""),
+                    args.get("new_string", ""),
+                )
+            if name == "run_terminal_cmd":
+                return self._run_terminal_cmd(args.get("command", ""))
         except PermissionError as e:
             return json.dumps({"error": "permission_denied", "detail": str(e)}, ensure_ascii=False)
         except Exception as e:
@@ -186,6 +205,196 @@ class ToolDispatcher:
             run_research_subtask_async(self.settings, task.strip(), self._ui_lang),
         )
         return json.dumps({"subtask_result": text}, ensure_ascii=False)
+
+    def _list_directory(self, path: str, max_entries: Any) -> str:
+        try:
+            lim = int(max_entries) if max_entries is not None else 200
+        except (TypeError, ValueError):
+            lim = 200
+        lim = max(1, min(lim, 2000))
+        p = self.policy.ensure_under_sandbox(path or ".")
+        if not p.exists():
+            return json.dumps({"error": "not_found", "path": str(p)}, ensure_ascii=False)
+        if not p.is_dir():
+            return json.dumps({"error": "not_a_directory", "path": str(p)}, ensure_ascii=False)
+        entries: list[dict[str, str]] = []
+        truncated = False
+        for i, child in enumerate(sorted(p.iterdir(), key=lambda x: x.name.lower())):
+            if i >= lim:
+                truncated = True
+                break
+            entries.append(
+                {
+                    "name": child.name,
+                    "kind": "directory" if child.is_dir() else "file",
+                }
+            )
+        return json.dumps(
+            {"path": str(p), "entries": entries, "truncated": truncated},
+            ensure_ascii=False,
+        )
+
+    def _glob_files(self, pattern: str) -> str:
+        pt = (pattern or "").strip()
+        if not pt:
+            return json.dumps({"error": "empty_pattern"}, ensure_ascii=False)
+        if pt.startswith("/") or ".." in pt:
+            return json.dumps({"error": "invalid_pattern", "detail": "拒绝绝对路径或 .."}, ensure_ascii=False)
+        root = self.policy.root
+        paths: list[str] = []
+        truncated = False
+        for i, fp in enumerate(root.glob(pt)):
+            if i >= 500:
+                truncated = True
+                break
+            try:
+                rel = fp.relative_to(root)
+            except ValueError:
+                continue
+            paths.append(str(rel).replace("\\", "/"))
+        return json.dumps({"pattern": pt, "paths": paths, "truncated": truncated}, ensure_ascii=False)
+
+    def _grep_workspace(self, regex: str, file_glob: str, max_matches: Any) -> str:
+        if not (regex or "").strip():
+            return json.dumps({"error": "empty_regex"}, ensure_ascii=False)
+        try:
+            cre = re.compile(regex)
+        except re.error as e:
+            return json.dumps({"error": "invalid_regex", "detail": str(e)}, ensure_ascii=False)
+        try:
+            mlim = int(max_matches) if max_matches is not None else 40
+        except (TypeError, ValueError):
+            mlim = 40
+        mlim = max(1, min(mlim, 200))
+        fg = (file_glob or "**/*.py").strip() or "**/*.py"
+        if fg.startswith("/") or ".." in fg:
+            return json.dumps({"error": "invalid_file_glob"}, ensure_ascii=False)
+        root = self.policy.root
+        matches: list[dict[str, Any]] = []
+        files_seen = 0
+        for fp in root.glob(fg):
+            if not fp.is_file():
+                continue
+            files_seen += 1
+            if files_seen > 3000:
+                break
+            try:
+                if fp.stat().st_size > 500_000:
+                    continue
+            except OSError:
+                continue
+            try:
+                rel = str(fp.relative_to(root)).replace("\\", "/")
+            except ValueError:
+                continue
+            try:
+                text = fp.read_text(encoding="utf-8", errors="replace")
+            except OSError:
+                continue
+            for line_no, line in enumerate(text.splitlines(), 1):
+                if cre.search(line):
+                    matches.append({"path": rel, "line": line_no, "text": line[:800]})
+                    if len(matches) >= mlim:
+                        return json.dumps(
+                            {
+                                "regex": regex,
+                                "matches": matches,
+                                "truncated": True,
+                                "file_glob": fg,
+                            },
+                            ensure_ascii=False,
+                        )
+        return json.dumps(
+            {"regex": regex, "matches": matches, "truncated": False, "file_glob": fg},
+            ensure_ascii=False,
+        )
+
+    def _search_replace(self, path: str, old_string: str, new_string: str) -> str:
+        if not path.strip():
+            return json.dumps({"error": "empty_path"}, ensure_ascii=False)
+        self._strict_check_write(path)
+        p = self.policy.ensure_under_sandbox(path)
+        if not p.exists():
+            return json.dumps({"error": "not_found", "path": str(p)}, ensure_ascii=False)
+        if not p.is_file():
+            return json.dumps({"error": "not_a_file", "path": str(p)}, ensure_ascii=False)
+        content = p.read_text(encoding="utf-8", errors="replace")
+        n = content.count(old_string)
+        if n == 0:
+            return json.dumps(
+                {"error": "no_match", "detail": "old_string 在文件中未出现", "path": str(p)},
+                ensure_ascii=False,
+            )
+        if n > 1:
+            return json.dumps(
+                {
+                    "error": "ambiguous_match",
+                    "detail": f"old_string 出现 {n} 次，须唯一匹配",
+                    "path": str(p),
+                },
+                ensure_ascii=False,
+            )
+        new_content = content.replace(old_string, new_string, 1)
+        p.write_text(new_content, encoding="utf-8")
+        return json.dumps(
+            {"path": str(p), "replaced": True, "bytes": len(new_content.encode("utf-8"))},
+            ensure_ascii=False,
+        )
+
+    def _run_terminal_cmd(self, command: str) -> str:
+        if self.settings.permission_mode == "strict":
+            return json.dumps(
+                {
+                    "error": "terminal_disabled_in_strict_mode",
+                    "detail": "JQ_PERMISSION_MODE=strict 时不允许 run_terminal_cmd，请改用 scratchpad 内工具链。",
+                },
+                ensure_ascii=False,
+            )
+        cmd = (command or "").strip()
+        if not cmd:
+            return json.dumps({"error": "empty_command"}, ensure_ascii=False)
+        low = cmd.lower()
+        if any(b in low for b in ("rm -rf /", "mkfs", "dd if=", ":(){")):
+            return json.dumps({"error": "command_blocked", "detail": "命中安全策略拒绝执行"}, ensure_ascii=False)
+        try:
+            argv = shlex.split(cmd)
+        except ValueError as e:
+            return json.dumps({"error": "invalid_command", "detail": str(e)}, ensure_ascii=False)
+        if not argv:
+            return json.dumps({"error": "empty_argv"}, ensure_ascii=False)
+        max_chars = self.settings.terminal_max_output_chars
+        try:
+            proc = subprocess.run(
+                argv,
+                cwd=str(self.policy.root),
+                capture_output=True,
+                text=True,
+                timeout=self.settings.terminal_timeout_sec,
+                env=os.environ.copy(),
+            )
+        except subprocess.TimeoutExpired:
+            return json.dumps(
+                {
+                    "error": "timeout",
+                    "seconds": self.settings.terminal_timeout_sec,
+                },
+                ensure_ascii=False,
+            )
+        except Exception as e:
+            return json.dumps({"error": "exec_failed", "detail": str(e)}, ensure_ascii=False)
+        out = (proc.stdout or "") + (proc.stderr or "")
+        truncated = False
+        if len(out) > max_chars:
+            out = out[:max_chars] + "\n...[truncated]"
+            truncated = True
+        return json.dumps(
+            {
+                "exit_code": proc.returncode,
+                "output": out,
+                "truncated": truncated,
+            },
+            ensure_ascii=False,
+        )
 
     def _fork_subagent(self, child_slug: str) -> str:
         if not self._active_session:

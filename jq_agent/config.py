@@ -72,6 +72,23 @@ class Settings(BaseSettings):
         description="压缩后保留尾部消息条数",
     )
 
+    ide_agent_tools: bool = Field(
+        default=True,
+        description="启用 IDE 级工具：列目录、glob、grep、search_replace、run_terminal_cmd（对标 Kilocode 工作区能力）",
+    )
+    terminal_timeout_sec: float = Field(
+        default=120.0,
+        ge=5.0,
+        le=600.0,
+        description="run_terminal_cmd 子进程超时（秒）",
+    )
+    terminal_max_output_chars: int = Field(
+        default=48_000,
+        ge=4_000,
+        le=500_000,
+        description="run_terminal_cmd 合并 stdout+stderr 最大字符数，超出截断",
+    )
+
 
 def load_settings() -> Settings:
     """读取配置；兼容旧环境变量 JQ_OPENAI_API_KEY / JQ_OPENAI_BASE_URL。"""

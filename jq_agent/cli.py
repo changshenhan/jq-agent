@@ -102,6 +102,7 @@ def doctor_cmd(ctx: typer.Context) -> None:
     c.print(f"Permission mode (JQ_PERMISSION_MODE): [cyan]{s.permission_mode}[/cyan]")
     c.print(f"Usage log (JQ_USAGE_LOG): {s.usage_log}")
     c.print(f"Session backend (JQ_SESSION_BACKEND): [cyan]{s.session_backend}[/cyan]")
+    c.print(f"IDE Agent tools (JQ_IDE_AGENT_TOOLS): [{'green' if s.ide_agent_tools else 'dim'}]{s.ide_agent_tools}[/]")
     c.print(f"{t('doctor_ui_lang', ui_lang)}: [yellow]{ui_lang}[/yellow]")
     c.print()
     for line in doctor_retrieval_lines(ui_lang):

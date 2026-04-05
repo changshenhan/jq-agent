@@ -83,12 +83,28 @@ def _iteration_status_panel(
     return Panel(grid, title=title, border_style="blue")
 
 
+def _ide_system_addon(settings: Settings) -> str:
+    if not settings.ide_agent_tools:
+        return ""
+    return (
+        "IDE Agent 补充（对齐 Kilocode「工作区浏览 + 终端执行」思路；路径均在沙箱 `.jq-agent` 内）：\n"
+        "- **list_directory** / **glob_files** / **grep_workspace**：探索目录、按 glob 列文件、正则搜代码行。\n"
+        "- **search_replace**：对 **唯一匹配** 片段做局部替换（优先于整文件 **write_strategy_file**）。\n"
+        "- **run_terminal_cmd**：在沙箱根目录执行单行命令（`shlex` 解析；**JQ_PERMISSION_MODE=strict** 时禁用）。\n"
+        "量化主路径不变：**query_jq_docs** → 写改策略 → **lint_strategy_file** → "
+        "**execute_backtest** → **analyze_backtest_metrics**。"
+    )
+
+
 def _build_system_content(settings: Settings, ui_lang: UiLang) -> str:
     parts = [
         SYSTEM_PROMPT.strip(),
         model_system_addon(settings.model, settings.llm_base_url),
         system_prompt_retrieval_addon(ui_lang),
     ]
+    ide = _ide_system_addon(settings)
+    if ide:
+        parts.append(ide)
     return "\n\n".join(parts)
 
 
@@ -113,6 +129,15 @@ async def gather_tool_results(
                 transient=True,
             ) as progress:
                 progress.add_task("正在执行回测…", total=None)
+                out = await asyncio.to_thread(dispatcher.dispatch, name, args)
+        elif name == "run_terminal_cmd":
+            with Progress(
+                SpinnerColumn(),
+                TextColumn("[progress.description]{task.description}"),
+                console=c,
+                transient=True,
+            ) as progress:
+                progress.add_task("正在执行终端命令…", total=None)
                 out = await asyncio.to_thread(dispatcher.dispatch, name, args)
         else:
             out = await asyncio.to_thread(dispatcher.dispatch, name, args)
@@ -163,7 +188,7 @@ async def run_agent_loop(
         ui_lang=ui_lang,
         active_session=session_name,
     )
-    tools = openai_tools()
+    tools = openai_tools(ide_agent=settings.ide_agent_tools)
     system_full = _build_system_content(settings, ui_lang)
 
     if session_name and resume_session:

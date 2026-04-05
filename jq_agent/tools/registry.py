@@ -3,9 +3,124 @@ from __future__ import annotations
 from typing import Any
 
 
-def openai_tools() -> list[dict[str, Any]]:
-    """OpenAI Chat Completions `tools` 列表（JSON Schema）。"""
+def _ide_agent_tool_definitions() -> list[dict[str, Any]]:
+    """Kilocode / IDE 风格：工作区浏览、搜索、局部编辑、沙箱终端。"""
     return [
+        {
+            "type": "function",
+            "function": {
+                "name": "list_directory",
+                "description": (
+                    "列出沙箱工作区某目录下的直接子项（文件与子目录名）。"
+                    "path 为空字符串表示工作区根。用于探索项目结构。"
+                ),
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "path": {
+                            "type": "string",
+                            "description": "相对工作区根的路径，如 scratchpad 或空字符串",
+                        },
+                        "max_entries": {
+                            "type": "integer",
+                            "description": "最多返回条目数，默认 200",
+                        },
+                    },
+                    "required": [],
+                },
+            },
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "glob_files",
+                "description": (
+                    "在沙箱根目录下按 glob 模式枚举文件路径（如 **/*.py、scratchpad/**/*.py）。"
+                    "结果截断至 500 条。"
+                ),
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "pattern": {
+                            "type": "string",
+                            "description": "glob 模式，相对工作区根",
+                        }
+                    },
+                    "required": ["pattern"],
+                },
+            },
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "grep_workspace",
+                "description": (
+                    "在沙箱内对文本文件做逐行正则搜索（默认扫描 **/*.py）。"
+                    "用于定位符号、TODO、错误处理等。"
+                ),
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "regex": {"type": "string", "description": "Python re 正则表达式"},
+                        "file_glob": {
+                            "type": "string",
+                            "description": "文件 glob，默认 **/*.py",
+                        },
+                        "max_matches": {
+                            "type": "integer",
+                            "description": "最多返回匹配数，默认 40",
+                        },
+                    },
+                    "required": ["regex"],
+                },
+            },
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "search_replace",
+                "description": (
+                    "在单个文件中将 old_string 唯一一次替换为 new_string（局部编辑，类似 IDE）。"
+                    "若匹配 0 次或多次则失败；整文件重写仍可用 write_strategy_file。"
+                ),
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "path": {"type": "string", "description": "相对工作区根的文件路径"},
+                        "old_string": {"type": "string", "description": "须唯一匹配的原文片段"},
+                        "new_string": {"type": "string", "description": "替换后的内容"},
+                    },
+                    "required": ["path", "old_string", "new_string"],
+                },
+            },
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "run_terminal_cmd",
+                "description": (
+                    "在沙箱工作区根目录下执行一条命令（使用 shlex 解析，非交互式 shell；"
+                    "禁止管道与重定向技巧逃逸沙箱）。"
+                    "适用于 python -m、ruff、pytest 等。JQ_PERMISSION_MODE=strict 时禁用。"
+                ),
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "command": {
+                            "type": "string",
+                            "description": "单行命令，如 python scratchpad/foo.py 或 ruff check scratchpad/",
+                        }
+                    },
+                    "required": ["command"],
+                },
+            },
+        },
+    ]
+
+
+def openai_tools(*, ide_agent: bool = True) -> list[dict[str, Any]]:
+    """OpenAI Chat Completions `tools` 列表（JSON Schema）。"""
+    core: list[dict[str, Any]] = [
         {
             "type": "function",
             "function": {
@@ -175,3 +290,6 @@ def openai_tools() -> list[dict[str, Any]]:
             },
         },
     ]
+    if ide_agent:
+        core.extend(_ide_agent_tool_definitions())
+    return core

@@ -45,6 +45,45 @@ def main() -> None:
         """对沙箱内 .py 运行 ruff check（若已安装）。"""
         return _dispatch("lint_strategy_file", path=path)
 
+    @mcp.tool()
+    def list_directory(path: str = "", max_entries: int = 200) -> str:
+        """列出沙箱目录下的文件与子目录。"""
+        return _dispatch("list_directory", path=path, max_entries=max_entries)
+
+    @mcp.tool()
+    def glob_files(pattern: str) -> str:
+        """按 glob 枚举沙箱内文件路径。"""
+        return _dispatch("glob_files", pattern=pattern)
+
+    @mcp.tool()
+    def grep_workspace(
+        regex: str,
+        file_glob: str = "**/*.py",
+        max_matches: int = 40,
+    ) -> str:
+        """在沙箱内正则搜索代码行。"""
+        return _dispatch(
+            "grep_workspace",
+            regex=regex,
+            file_glob=file_glob,
+            max_matches=max_matches,
+        )
+
+    @mcp.tool()
+    def search_replace(path: str, old_string: str, new_string: str) -> str:
+        """文件中唯一匹配片段替换。"""
+        return _dispatch(
+            "search_replace",
+            path=path,
+            old_string=old_string,
+            new_string=new_string,
+        )
+
+    @mcp.tool()
+    def run_terminal_cmd(command: str) -> str:
+        """在沙箱根目录执行命令（strict 模式禁用）。"""
+        return _dispatch("run_terminal_cmd", command=command)
+
     mcp.run(transport="stdio")
 
 

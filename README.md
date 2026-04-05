@@ -35,6 +35,7 @@
 
 - **Agentic loop** — OpenAI-compatible **function calling** until done or **max iterations**.
 - **Tools** — `query_jq_docs`, `read_file`, `write_strategy_file`, `execute_backtest`, `analyze_backtest_metrics`, `lint_strategy_file` (ruff), `research_subtask`.
+- **IDE Agent tools** (default on; Kilocode-style workspace) — `list_directory`, `glob_files`, `grep_workspace`, `search_replace` (unique match), `run_terminal_cmd` (sandbox cwd; disabled under **`JQ_PERMISSION_MODE=strict`**).
 - **Path policy** — paths under workspace **`.jq-agent/`**; optional **`JQ_PERMISSION_MODE=strict`** → writes only **`scratchpad/`**.
 - **Sessions** — `jq-agent run --session NAME` / `--resume`; SQLite or JSON backend; **`fork_subagent_session`**; **`jq-agent session tree`**.
 - **Streaming** — `jq-agent run --stream` or **`JQ_LLM_STREAM=true`** (SSE).
@@ -58,6 +59,7 @@
 | Doc retrieval (keyword + slices + Embeddings API) | **Done** |
 | CLI visualization + backtest metrics table + Plotly equity chart | **Done** |
 | FastAPI + SSE Web UI (`[web]`) | **Done** |
+| IDE-style tools (browse / search / patch / terminal in sandbox) | **Done** — `JQ_IDE_AGENT_TOOLS` |
 | Full SaaS, broker adapters, bundled local embedding models | **Roadmap** — see below |
 
 ---
@@ -152,6 +154,9 @@ jq-agent index status
 | `JQ_SESSION_BACKEND` | `sqlite` or `json` |
 | `JQ_SESSION_COMPACT_THRESHOLD` / `JQ_SESSION_COMPACT_KEEP` | Session compaction |
 | `JQ_PHONE` / `JQ_PASSWORD` | JoinQuant / **`jqdatasdk`** when running real backtests |
+| `JQ_IDE_AGENT_TOOLS` | `true` / `false` — enable IDE tools (`list_directory`, `glob_files`, `grep_workspace`, `search_replace`, `run_terminal_cmd`) |
+| `JQ_TERMINAL_TIMEOUT_SEC` | Timeout for **`run_terminal_cmd`** (default `120`) |
+| `JQ_TERMINAL_MAX_OUTPUT_CHARS` | Max combined stdout+stderr chars from **`run_terminal_cmd`** |
 
 See **`.env.example`** for the full list and comments.
 
