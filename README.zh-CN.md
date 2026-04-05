@@ -4,7 +4,7 @@
 
 **聚宽生态量化 Agent 开源框架** — 编排闭环 · 文档检索（关键词 + 可选底座 Embeddings API）· 沙箱工具。
 
-[![Python 3.11+](https://img.shields.io/badge/python-3.11+-3776AB?style=flat&logo=python&logoColor=white)](https://www.python.org/)
+[![Python 3.11+](https://img.shields.io/badge/python-3.11+-3776AB?style=flat&logo=python&logoColor=white)](https://github.com/changshenhan/jq-agent)
 [![License: MIT](https://img.shields.io/badge/license-MIT-5c6bc0?style=flat)](LICENSE)
 
 [English README](README.md) · [架构说明](#架构) · [命令行与语言](#命令行与语言) · [集成教程（中英，见 README.md）](README.md#integrated-tutorial-bilingual)
