@@ -103,7 +103,7 @@ Not in this repo: **LSP client** wiring (Pyright/Pylance-style diagnostics into 
 | **长处** | harness 工程叙事完整；工具与 MCP 清晰；Rust 路径偏性能与工程化 | 产品化程度高：路由多模型、LSP、生态与多端 | **领域贴合**：`query_jq_docs`、官方切片索引、**execute_backtest**、**净值 HTML**；核心栈 **Python**、依赖面可控 |
 | **短处 / 代价** | 体量大；不解决聚宽业务与合规细节 | 安装与运维更重；不对 **jqdatasdk** 或券商规则做专门抽象 | **垂直优先**：已提供 **沙箱内 IDE 式工具**（列目录 / glob / grep / 局部替换 / 终端）与 **MCP**，但**不含** Kilocode 级 **LSP 注入、官方 IDE 插件、云端 Gateway**；向量检索依赖 **Embeddings HTTP API**（无内置本地嵌入模型）。 |
 
-**与三者关系：** claw-code 与 Kilo Code 都优先服务**通用写代码**场景；**jq-agent** 有意把工具契约收束到 **聚宽式工作流**（文档 → 策略 → Lint → 回测 → 指标），便于量化侧评审。实现上借鉴了沙箱、压缩、MCP、JSON 修复等常见思路，但 **jq-agent 并非二者源码的分支或 fork**。
+**与三者关系：** claw-code 与 Kilo Code 都优先服务**通用写代码**场景；**jq-agent** 有意把工具契约收束到 **聚宽式工作流**（文档 → 策略 → Lint → 回测 → 指标），便于量化侧评审。实现上借鉴了沙箱、压缩、MCP、JSON 修复等常见思路**。
 
 ---
 
