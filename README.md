@@ -7,7 +7,7 @@
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-3776AB?style=flat&logo=python&logoColor=white)](https://github.com/changshenhan/jq-agent)
 [![License: MIT](https://img.shields.io/badge/license-MIT-5c6bc0?style=flat)](LICENSE)
 
-[中文文档](README.zh-CN.md) · [Architecture](#architecture) · [Comparison](#comparison-claw-code-kilo-code-and-jq-agent) · [CLI](#cli--language) · [Tutorial](#integrated-tutorial-bilingual)
+[中文文档](README.zh-CN.md) · [Architecture](#architecture) · [对比](#comparison-claw-kilo-jq) · [CLI](#cli--language) · [Tutorial](#integrated-tutorial-bilingual)
 
 </div>
 
@@ -62,21 +62,19 @@
 
 ---
 
-## Comparison: claw-code, Kilo Code, and jq-agent
+<h2 id="comparison-claw-kilo-jq">对比：claw-code、Kilo Code 与 jq-agent</h2>
 
-This section answers the “study **claw-code** vs **Kilo Code**, compare pros/cons” style assignment: it is based on **public repositories and docs** only (no reliance on proprietary leaks as a source of truth). In this workspace, **claw-code** refers to the open **claw-code** rewrite project (e.g. [instructkr/claw-code](https://github.com/instructkr/claw-code)–style harness: Python + Rust ports, MCP, compaction). **Kilo Code** refers to the open **[kilo-org/kilocode](https://github.com/kilo-org/kilocode)** stack and [kilo.ai docs](https://kilo.ai/docs/).
+本节对应「对照 **claw-code** 与 **Kilo Code**、比较优劣」一类学习任务：仅依据**公开仓库与文档**表述，不以任何专有泄露代码为权威依据。文中 **claw-code** 指开源的 harness 重写路线（与本仓库同工作区参考的 [instructkr/claw-code](https://github.com/instructkr/claw-code) 一类：Python/Rust、MCP、会话压缩等）。**Kilo Code** 指开源 **[kilo-org/kilocode](https://github.com/kilo-org/kilocode)** 及其 [官方文档](https://kilo.ai/docs/) 所描述的通用编程 Agent 体系。
 
-| Dimension | **claw-code** (harness rewrite) | **Kilo Code** | **jq-agent** (this repo) |
-|-----------|-----------------------------------|---------------|---------------------------|
-| **Primary goal** | Rebuild a **general agent harness** (tools, session, MCP, CLI) inspired by well-known harness patterns; Rust/Python runtime | **IDE-integrated coding agent**: central CLI + HTTP/SSE, many models, LSP, tools, cloud option | **Quant / JoinQuant domain agent**: jqdatasdk docs, **sandboxed** strategy files, **subprocess backtests**, metrics & plots |
-| **Surface** | CLI / runtime ports, plugin-style tools | VS Code / JetBrains / TUI / HTTP API | **Thin CLI** + optional **FastAPI Web UI** + **MCP stdio** |
-| **Context & memory** | Session state, **compaction**, MCP orchestration (as in upstream harness design) | Session manager, checkpoints, multi-mode (architect/coder/…) | **Session** JSON/SQLite, **LLM compaction**, retrieval injected into **system** |
-| **Strengths** | Deep **harness engineering** narrative; tool/MCP story; performance path (Rust) | **Mature product shape**: provider router, LSP, marketplace, multi-client | **Domain fit**: `query_jq_docs` + index slices + **execute_backtest** + **equity HTML**; minimal moving parts in **Python** |
-| **Trade-offs** | Heavy scope; not JoinQuant-specific | Larger install & ops; not specialized for **jqdatasdk** or broker rules | **Narrow**: not a full IDE agent; embeddings via **HTTP API** only (no bundled local embed model yet) |
+| 维度 | **claw-code**（harness 重写） | **Kilo Code** | **jq-agent**（本仓库） |
+|------|------------------------------|---------------|------------------------|
+| **定位** | 面向**通用软件 Agent**：工具、会话、MCP、CLI 等 harness；Rust/Python 双栈 | **IDE 场景编程助手**：中央 CLI + HTTP/SSE、多模型、LSP、工具链，可选云端能力 | **量化 / 聚宽垂直**：jqdatasdk 文档检索、**沙箱**内写策略、**子进程回测**、指标与净值可视化 |
+| **交互形态** | CLI / 运行时、插件式工具 | VS Code / JetBrains / 终端 TUI / HTTP API | **轻量 CLI** + 可选 **FastAPI + SSE** 网页 + **MCP stdio** |
+| **上下文与记忆** | 会话状态、**压缩（compaction）**、MCP 编排 | 会话管理、检查点、多模式（架构师/编码等） | **JSON / SQLite 会话**、**LLM 压缩**、检索结果写入 **system** |
+| **长处** | harness 工程叙事完整；工具与 MCP 清晰；Rust 路径偏性能与工程化 | 产品化程度高：路由多模型、LSP、生态与多端 | **领域贴合**：`query_jq_docs`、官方切片索引、**execute_backtest**、**净值 HTML**；核心栈 **Python**、依赖面可控 |
+| **短处 / 代价** | 体量大；不解决聚宽业务与合规细节 | 安装与运维更重；不对 **jqdatasdk** 或券商规则做专门抽象 | **范围窄**：不是完整 IDE Agent；向量检索目前依赖**云端 Embeddings HTTP API**（尚未内置本地嵌入模型） |
 
-**Why jq-agent still matters next to them:** claw-code and Kilo Code optimize for **general software engineering** agents. jq-agent **intentionally** narrows the tool contract to **JoinQuant-style workflows** (docs → strategy → lint → backtest → metrics), which is what a quant stack audit cares about. Ideas cross-pollinate (sandbox, compaction, MCP, JSON repair), but **jq-agent is not a fork** of either codebase.
-
-**中文摘要：** 上表从**公开仓库**对比了本机参考的 **claw-code** 系 harness 重写与 **Kilo Code** 通用编程 Agent；**jq-agent** 选择做**聚宽/jqdatasdk 垂直闭环**（检索、沙箱、回测、指标与可视化），而非复刻 IDE 级全家桶——这与“学习 harness、再对比取舍”的任务一致，且边界清晰。
+**与三者关系：** claw-code 与 Kilo Code 都优先服务**通用写代码**场景；**jq-agent** 有意把工具契约收束到 **聚宽式工作流**（文档 → 策略 → Lint → 回测 → 指标），便于量化侧评审。实现上借鉴了沙箱、压缩、MCP、JSON 修复等常见思路，但 **jq-agent 并非二者源码的分支或 fork**。
 
 ---
 
