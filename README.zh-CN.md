@@ -43,7 +43,7 @@
 - **检索状态可见** — `jq-agent doctor` 与运行时 **system** 会说明切片索引与 Embeddings 缓存是否就绪。
 - **终端可视化** — 每轮迭代开始用 **Rich** 展示**任务目标、已用步数、累计 Token**；**`execute_backtest`** 执行时显示 **Spinner**；**`analyze_backtest_metrics`** 用**彩色表格**展示夏普、回撤、收益等。
 - **净值曲线 HTML** — 回测成功且策略写出 **`scratchpad/backtest_equity.csv`** 时，工具自动生成 **`scratchpad/backtest_result.html`**（**Plotly 6** 交互图，依赖已包含 **pandas**、**plotly**），并可尝试用系统浏览器打开。
-- **可选 Web 界面** — `pip install 'jq-agent[web]'` 后执行 **`jq-agent web`** 启动 **FastAPI**（默认 `127.0.0.1:8765`）：**`/`** 单页表单（**Tailwind CSS** CDN 样式），**`/api/run`** 以 **SSE** 推送 `log` / `done` / `error`，文本与 CLI 在启用 `log_callback` 时一致。
+- **可选 Web 界面** — `pip install 'jq-agent[web]'` 后执行 **`jq-agent web`** 启动 **FastAPI**（默认 `127.0.0.1:8765`）：**`/`** 单页（**Tailwind** CDN、**Fetch Streams**、**rAF** 批量刷日志、**AbortController** 停止），**`/api/run`** **SSE**（`X-Accel-Buffering: no` 等代理友好头），文本与 CLI 在启用 `log_callback` 时一致。
 
 ---
 
@@ -107,7 +107,7 @@ flowchart LR
 - **交互图**：**Plotly.py 6.x**（净值 HTML、CDN `plotly.js`）。
 - **终端**：**Rich**（面板、表格、Spinner）。
 - **CLI**：**Typer**。
-- **可选 Web**：**FastAPI** + **Tailwind Play CDN**（无 Node 构建）。英文详解见 **[README — Visualization stack](README.md#visualization-stack-mainstream-choices)**。
+- **可选 Web**：**FastAPI** + **SSE** + **Tailwind** + **Fetch Streams / rAF**（无 Node 构建）。英文详解见 **[README — Visualization stack](README.md#visualization-stack-mainstream-choices)**。
 
 ---
 

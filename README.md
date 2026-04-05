@@ -47,7 +47,7 @@
 - **Bilingual CLI** — **`--lang`**, **`JQ_LANG`**, **`jq-agent config lang`**.
 - **Terminal UX** — **Rich** panel (goal / steps / tokens), **spinner** for **`execute_backtest`**, colored table for **`analyze_backtest_metrics`**.
 - **Equity HTML** — strategy writes **`scratchpad/backtest_equity.csv`** → auto **`scratchpad/backtest_result.html`** (**Plotly 6** interactive chart).
-- **Web UI (optional)** — **`pip install 'jq-agent[web]'`** → **`jq-agent web`** → **`/`** (Tailwind via CDN) + **`/api/run`** SSE (`log` / `done` / `error`).
+- **Web UI (optional)** — **`pip install 'jq-agent[web]'`** → **`jq-agent web`** → **`/`** (Tailwind CDN, Fetch Streams, rAF-batched log) + **`/api/run`** SSE (`log` / `done` / `error`); **Stop** aborts via **AbortController**.
 
 ---
 
@@ -167,8 +167,10 @@ This project optimizes **perceived and wall-clock latency** along lines common i
 | **Interactive charts** | **Plotly.py ≥ 6** | HTML equity curves (`scratchpad/backtest_result.html`), CDN `plotly.js`, responsive toolbar — the de facto standard for browser-native quant dashboards in Python. |
 | **Terminal UI** | **Rich ≥ 14** | Panels, spinners, colored metric tables — widely adopted for modern Python CLIs. |
 | **CLI framework** | **Typer ≥ 0.24** | Built on Click; standard for typed command-line apps. |
-| **Optional Web UI** | **FastAPI + SSE + Tailwind (Play CDN)** | Minimal single-page UI at `jq-agent web`: utility-first CSS without a Node build step. |
+| **Optional Web UI** | **FastAPI + SSE + Tailwind (Play CDN)** | Minimal SPA at `jq-agent web`: **Fetch Streams** + **requestAnimationFrame**–batched log updates, **AbortController** cancel, **SSE** headers (`Cache-Control: no-cache`, **`X-Accel-Buffering: no`** for proxies). **Uvicorn [standard]** (httptools; **uvloop** on Unix) with raised **keep-alive** for connection reuse. |
 | **Examples** | **Plotly only** | `examples/plot_demo.py` matches the core chart stack (no parallel matplotlib dependency). |
+
+**Web UI latency & smoothness (what we optimize):** token/log lines are **not** appended on every chunk (which forces layout thrash); they are **batched per animation frame** (~60 Hz). The log area uses a **scroll container** with **`contain-content`** and **stable scrollbar gutter** to reduce reflow cost. **DNS-prefetch / preconnect** to the Tailwind CDN speeds cold loads. **Do not** put a gzip middleware in front of **`text/event-stream`** in your own reverse proxy (buffering hurts TTFT).
 
 ---
 

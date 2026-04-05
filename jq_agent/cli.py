@@ -127,7 +127,13 @@ def web_cmd(
     from jq_agent.web.server import app as web_app
 
     typer.echo(f"Web UI → http://{host}:{port}/  (health: /health)")
-    uvicorn.run(web_app, host=host, port=port)
+    # httptools +（Unix 上）uvloop 由 uvicorn[standard] 提供；长连接复用略抬高 keep-alive。
+    uvicorn.run(
+        web_app,
+        host=host,
+        port=port,
+        timeout_keep_alive=120,
+    )
 
 
 config_app = typer.Typer(help="Local preferences / 本地偏好")

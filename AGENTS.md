@@ -56,7 +56,7 @@
 
 - **图表**：**Plotly.py 6.x**（交互 HTML，与 `jq_agent/tools/equity_html.py` 一致）；**不要**在无理由时引入第二套绘图库（如 matplotlib）。
 - **终端**：**Rich**（面板、表格、Spinner）。
-- **可选 Web**：**FastAPI** + **Tailwind Play CDN**（`jq_agent/web/server.py` 内联页），保持无前端构建链。
+- **可选 Web**：**FastAPI** + **SSE** + **Tailwind CDN** + **Fetch Streams / requestAnimationFrame**（`jq_agent/web/server.py`），无打包；反向代理勿对 SSE 做 gzip 缓冲。
 
 ## 延迟与性能（给用户建议时）
 
