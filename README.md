@@ -17,7 +17,7 @@
 
 **English.** jq-agent is an **open-source orchestration framework** for building **JoinQuant / jqdatasdk–aware quant agents**. It runs a **tool-calling loop** (plan → execute → observe) over a **sandboxed workspace** (under `.jq-agent/`), so the model can look up API snippets, write strategy files, lint them, run backtests in a subprocess, and parse metrics—instead of only chatting. Document retrieval combines **bundled keyword snippets**, optional **user-built slices** from the official GitHub repo, and—when you configure a provider key—**semantic hits** via the provider’s **Embeddings HTTP API**. The CLI is **bilingual (zh/en)**; sessions can be persisted (JSON or SQLite); **MCP stdio** can expose core tools to editors; an optional **FastAPI + SSE** browser UI is available. **It is not** a hosted product or a broker: you bring your own **LLM API** and (for live jqdatasdk) your own **JoinQuant credentials** via environment or `.env` (never commit secrets).
 
-**中文。** jq-agent 是面向 **聚宽 / jqdatasdk** 的**开源 Agent 编排框架**：在 **`.jq-agent/` 沙箱**内完成 **规划 → 执行 → 观察**，支持查文档、写策略、ruff、子进程回测与指标解析；检索融合**关键词**、可选 **GitHub 官方切片**与 **Embeddings API** 语义命中；CLI **中英**；会话可落盘；可选 **浏览器界面（SSE 日志）**。**非**托管产品：需自行配置大模型与聚宽相关环境变量。
+**中文。** jq-agent 是面向 ** jqdatasdk** 的**开源 Agent 编排框架**：在 **`.jq-agent/` 沙箱**内完成 **规划 → 执行 → 观察**，支持查文档、写策略、ruff、子进程回测与指标解析；检索融合**关键词**、可选 **GitHub 官方切片**与 **Embeddings API** 语义命中；CLI **中英**；会话可落盘；可选 **浏览器界面（SSE 日志）**。**非**托管产品：需自行配置大模型与聚宽相关环境变量。
 
 ---
 
@@ -106,7 +106,7 @@ Not in this repo: **LSP client** wiring (Pyright/Pylance-style diagnostics into 
 
 <h2 id="comparison-claw-kilo-jq">对比：claw-code、Kilo Code 与 jq-agent</h2>
 
-本节对应「对照 **claw-code** 与 **Kilo Code**、比较优劣」一类学习任务：仅依据**公开仓库与文档**表述，不以任何专有泄露代码为权威依据。文中 **claw-code** 指开源的 harness 重写路线（与本仓库同工作区参考的 [instructkr/claw-code](https://github.com/instructkr/claw-code) 一类：Python/Rust、MCP、会话压缩等）。**Kilo Code** 指开源 **[kilo-org/kilocode](https://github.com/kilo-org/kilocode)** 及其 [官方文档](https://kilo.ai/docs/) 所描述的通用编程 Agent 体系。
+
 
 | 维度 | **claw-code**（harness 重写） | **Kilo Code** | **jq-agent**（本仓库） |
 |------|------------------------------|---------------|------------------------|
