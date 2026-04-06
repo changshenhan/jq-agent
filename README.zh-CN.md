@@ -14,7 +14,7 @@
 
 ---
 
-## 为什么选择 jq-agent？
+## jq-agent？
 
 | 普通对话 | jq-agent |
 |----------|----------|
@@ -49,7 +49,7 @@
 
 ## 终端与工具阶段（借鉴 Open Harness）
 
-本仓库**未**引入 Open Harness 的 TypeScript / Effect 技术栈，但借鉴其 **harness-loop** 的两点：**按工具名更新进度**、**结构化工具起止**（详见 **[AGENTS.md](AGENTS.md)**「借鉴 Open Harness」）。CLI 与 Web 行为以英文 **[README.md](README.md#ux--tool-phases-open-harnessinspired)** 为准。
+本仓库**未**引入 Open Harness 的 TypeScript / Effect 技术栈，借鉴其 **harness-loop** 的两点：**按工具名更新进度**、**结构化工具起止**（详见 **[AGENTS.md](AGENTS.md)**「借鉴 Open Harness」）。CLI 与 Web 行为以英文 **[README.md](README.md#ux--tool-phases-open-harnessinspired)** 为准。
 
 ---
 
